@@ -1,0 +1,21 @@
+{
+  "session3_decisions_identical_to_validated_audit": true,
+  "session3_labels_identical_to_validated_audit": true,
+  "escalated_voice_scores_within_1e-7_of_validated_audit": true,
+  "max_escalated_voice_score_delta": 2.0588622723360928e-08,
+  "session3_trial_count": 3698,
+  "session3_confusion_matrix": {
+    "TN": 3579,
+    "FP": 33,
+    "FN": 20,
+    "TP": 66
+  },
+  "metric_differences_vs_validated_audit": {
+    "Accuracy": 0.0,
+    "Precision": 0.0,
+    "Recall": 0.0,
+    "F1": 0.0,
+    "FAR": 0.0,
+    "FRR": 0.0
+  }
+}

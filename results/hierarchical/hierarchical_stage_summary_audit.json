@@ -1,0 +1,15 @@
+{
+    "total_trials": 3698,
+    "face_direct_accept": 94,
+    "face_direct_reject": 3574,
+    "voice_escalations": 30,
+    "voice_escalation_rate": 0.008112493239588967,
+    "voice_accept": 5,
+    "voice_reject": 25,
+    "genuine_voice_escalations": 4,
+    "impostor_voice_escalations": 26,
+    "genuine_voice_accepts": 2,
+    "impostor_voice_accepts": 3,
+    "genuine_voice_rejects": 2,
+    "impostor_voice_rejects": 23
+}

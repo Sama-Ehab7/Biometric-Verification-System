@@ -1,0 +1,65 @@
+{
+  "status": "sequential run; validated policy preserved",
+  "authoritative_policy_input": "saved_models\\hierarchical\\hierarchical_policy_audit.joblib",
+  "authoritative_session2_threshold_record": "results\\hierarchical\\selected_thresholds_audit.json",
+  "previous_validated_audit_artifacts_preserved": [
+    "results/hierarchical/threshold_search_audit.csv",
+    "results/hierarchical/threshold_candidates_audit.csv",
+    "results/hierarchical/selected_thresholds_audit.json",
+    "results/hierarchical/session2_score_distributions_audit.csv",
+    "results/hierarchical/session2_trial_scores_audit.csv",
+    "results/hierarchical/session2_escalation_analysis_audit.csv",
+    "results/hierarchical/hierarchical_comparison_audit.csv",
+    "results/hierarchical/hierarchical_stage_summary_audit.json",
+    "results/hierarchical/hierarchical_trial_decisions_audit.csv",
+    "results/hierarchical/face_confusion_matrix_audit.png",
+    "results/hierarchical/voice_confusion_matrix_audit.png",
+    "results/hierarchical/hierarchical_confusion_matrix_audit.png",
+    "results/hierarchical/face_roc_curve_audit.png",
+    "saved_models/hierarchical/hierarchical_policy_audit.joblib"
+  ],
+  "legacy_artifacts_preserved": [
+    "results/hierarchical/face_coverage_experiment.csv",
+    "results/hierarchical/selected_thresholds.json",
+    "results/hierarchical/hierarchical_comparison.csv",
+    "results/hierarchical/hierarchical_stage_summary.json",
+    "results/hierarchical/hierarchical_trial_decisions.csv",
+    "results/hierarchical/face_confusion_matrix.png",
+    "results/hierarchical/voice_confusion_matrix.png",
+    "results/hierarchical/hierarchical_confusion_matrix.png",
+    "results/hierarchical/face_roc_curve.png",
+    "saved_models/hierarchical/hierarchical_policy.joblib"
+  ],
+  "new_sequential_artifacts": [
+    "results\\hierarchical\\session2_validation_sequential.csv",
+    "results\\hierarchical\\hierarchical_trial_decisions_sequential.csv",
+    "results\\hierarchical\\hierarchical_comparison_sequential.csv",
+    "results\\hierarchical\\hierarchical_stage_summary_sequential.json",
+    "results\\hierarchical\\sequential_vs_audit_comparison.json",
+    "results\\hierarchical\\hierarchical_run_manifest_sequential.json",
+    "results\\hierarchical\\hierarchical_confusion_matrix_sequential.png",
+    "results\\hierarchical\\face_roc_curve_sequential.png",
+    "saved_models\\hierarchical\\hierarchical_policy_sequential.joblib"
+  ],
+  "comparison": {
+    "session3_decisions_identical_to_validated_audit": true,
+    "session3_labels_identical_to_validated_audit": true,
+    "escalated_voice_scores_within_1e-7_of_validated_audit": true,
+    "max_escalated_voice_score_delta": 2.0588622723360928e-08,
+    "session3_trial_count": 3698,
+    "session3_confusion_matrix": {
+      "TN": 3579,
+      "FP": 33,
+      "FN": 20,
+      "TP": 66
+    },
+    "metric_differences_vs_validated_audit": {
+      "Accuracy": 0.0,
+      "Precision": 0.0,
+      "Recall": 0.0,
+      "F1": 0.0,
+      "FAR": 0.0,
+      "FRR": 0.0
+    }
+  }
+}

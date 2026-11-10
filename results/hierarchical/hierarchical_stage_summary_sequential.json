@@ -1,0 +1,35 @@
+{
+  "policy_source": "saved_models\\hierarchical\\hierarchical_policy_audit.joblib",
+  "threshold_selection_session": "session_2",
+  "final_evaluation_session": "session_3",
+  "sessions": [
+    {
+      "session": "session_2",
+      "total_trials": 3698,
+      "direct_face_accept": 98,
+      "direct_face_reject": 3574,
+      "voice_escalations": 26,
+      "voice_pair_inferences": 26,
+      "genuine_escalations": 3,
+      "impostor_escalations": 23,
+      "genuine_voice_accepts": 2,
+      "impostor_voice_accepts": 1,
+      "genuine_voice_rejects": 1,
+      "impostor_voice_rejects": 22
+    },
+    {
+      "session": "session_3",
+      "total_trials": 3698,
+      "direct_face_accept": 94,
+      "direct_face_reject": 3574,
+      "voice_escalations": 30,
+      "voice_pair_inferences": 30,
+      "genuine_escalations": 4,
+      "impostor_escalations": 26,
+      "genuine_voice_accepts": 2,
+      "impostor_voice_accepts": 3,
+      "genuine_voice_rejects": 2,
+      "impostor_voice_rejects": 23
+    }
+  ]
+}

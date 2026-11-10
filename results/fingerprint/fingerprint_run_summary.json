@@ -1,0 +1,49 @@
+{
+    "dataset": "FVC2002 Set B - DB1_B, DB2_B, DB3_B",
+    "identities": 30,
+    "features": 8110,
+    "target_far": 0.01,
+    "training_trials": 3600,
+    "validation_trials": 1800,
+    "test_trials": 1800,
+    "models": [
+        {
+            "threshold": 0.4540606024646377,
+            "accuracy": 0.9638888888888889,
+            "precision": 0.4444444444444444,
+            "recall": 0.3333333333333333,
+            "f1": 0.38095238095238093,
+            "far": 0.014367816091954023,
+            "frr": 0.6666666666666666,
+            "roc_auc": 0.905124521072797,
+            "tn": 1715,
+            "fp": 25,
+            "fn": 40,
+            "tp": 20,
+            "genuine_trials": 60,
+            "impostor_trials": 1740,
+            "model": "SVM",
+            "validation_far": 0.009770114942528735,
+            "validation_frr": 0.8666666666666667
+        },
+        {
+            "threshold": 0.23666666666666666,
+            "accuracy": 0.955,
+            "precision": 0.3220338983050847,
+            "recall": 0.31666666666666665,
+            "f1": 0.31932773109243695,
+            "far": 0.022988505747126436,
+            "frr": 0.6833333333333333,
+            "roc_auc": 0.9248659003831418,
+            "tn": 1700,
+            "fp": 40,
+            "fn": 41,
+            "tp": 19,
+            "genuine_trials": 60,
+            "impostor_trials": 1740,
+            "model": "RandomForest",
+            "validation_far": 0.009195402298850575,
+            "validation_frr": 0.8666666666666667
+        }
+    ]
+}
