@@ -1,0 +1,49 @@
+{
+  "experiment": "Controlled real-fingerprint audit; separate from legacy outputs",
+  "dataset": "DB1_B + DB2_B + DB3_B only (captured FVC2002 Set B)",
+  "synthetic_DB4_B_included": false,
+  "enrollment_validation_test_impressions": {
+    "enrollment": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "validation": [
+      5,
+      6
+    ],
+    "test": [
+      7,
+      8
+    ]
+  },
+  "identities": 30,
+  "feature_dimensions": {
+    "HOG": 8100,
+    "LBP": 10,
+    "original_total": 8110
+  },
+  "training_trials": {
+    "total": 3600,
+    "genuine": 120,
+    "impostor": 3480
+  },
+  "validation_trials": {
+    "total": 1800,
+    "genuine": 60,
+    "impostor": 1740
+  },
+  "test_trials": {
+    "total": 1800,
+    "genuine": 60,
+    "impostor": 1740
+  },
+  "target_far": 0.01,
+  "threshold_selection": "validation scores only; threshold frozen before Session 3 evaluation",
+  "block_balanced_representation": "mean absolute HOG distance plus LBP chi-square distance",
+  "candidate_selection": "lowest validation FRR at FAR <= 0.01; ties lower FAR then higher validation ROC-AUC",
+  "selected_validation_model": "BalancedBlocksLogisticRegression",
+  "legacy_outputs_overwritten": false,
+  "random_state": 42
+}

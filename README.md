@@ -1,4 +1,4 @@
-# Hierarchical Multimodal Biometric Verification System
+# Biometric Verification System
 
 ## 1. Project Overview
 
@@ -421,7 +421,53 @@ The Hierarchical implementation uses the validated audit policy and produces seq
 
 ---
 
-## 13. Conclusion
+## Fingerprint Bonus (Separate Modality)
+
+Fingerprint verification is implemented in `src/preprocessing/fingerprint_preprocessing.py`, `src/features/fingerprint_features.py`, and `src/verification/fingerprint_verification.py`. It is not fused with VidTIMIT because the FVC identities are not the VidTIMIT participants. There are 320 images (four databases, 10 identities and 8 impressions each); DB1_B–DB3_B are captured data and DB4_B is synthetic. Only DB1_B–DB3_B are included in the real-data results (30 database-qualified identities). Processing uses grayscale, CLAHE, median filtering, and aspect-preserving resize/padding to 256×256. Descriptors are 8,100 HOG plus 10 uniform-LBP histogram values. Impressions 1–4 enroll, 5–6 validate, and 7–8 test, with 120/60/60 real images and 3,600/1,800/1,800 pair trials.
+
+Saved baseline results in `results/fingerprint/` (thresholds selected at validation target FAR 1%):
+
+| Model | Threshold | Validation FAR | Validation FRR | Test accuracy | Precision | Recall | F1 | FAR | FRR | ROC-AUC | TN/FP/FN/TP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| SVM | 0.454061 | 0.977% | 86.67% | 96.39% | 44.44% | 33.33% | 38.10% | 1.44% | 66.67% | 0.9051 | 1715/25/40/20 |
+| Random Forest | 0.236667 | 0.920% | 86.67% | 95.50% | 32.20% | 31.67% | 31.93% | 2.30% | 68.33% | 0.9249 | 1700/40/41/19 |
+
+The high FRR is a material limitation. The isolated comparison in `results/fingerprint/controlled_audit_v1/` evaluated the unchanged saved baselines and two block-balanced HOG/LBP alternatives. Alternative thresholds were selected using validation only. The alternatives reached validation FAR 0.977% and FRR 85.0–86.67%, but test FAR was 4.02–4.14%, so they were not adopted. In the saved baseline audit, false accepts were among same-database impostor claims while cross-database false accepts were zero; this suggests that the aggregate result benefits from easier cross-database negatives. Only 30 real identities and two validation/test impressions per identity are available.
+
+## Metrics
+
+Accuracy is correct decisions divided by all decisions. Precision is TP/(TP+FP), recall/genuine acceptance rate is TP/(TP+FN), and F1 is their harmonic mean. FAR is FP/(FP+TN), the impostor acceptance proportion; FRR is FN/(FN+TP), the genuine rejection proportion. ROC-AUC measures ranking over score thresholds. EER is the point where FAR and FRR are closest; it is descriptive and must not be selected on the final test set. Confusion matrices report TN, FP, FN, TP. Since trial counts are imbalanced, accuracy alone is insufficient.
+
+## Optional Bonus Status and Limitations
+
+| Component | Status | Notes |
+|---|---|---|
+| Face-only | Complete | VidTIMIT, SVM and Random Forest |
+| Voice-only | Complete | VidTIMIT, SVM and Random Forest |
+| Face+Voice Early Fusion | Complete | Concatenated feature vectors before classifier training |
+| Hierarchical Face→Voice | Complete | Sequential cascade; Voice runs for escalated trials only |
+| Fingerprint | Complete with limitations | Separate FVC single-modality experiment; high FRR |
+| Speech commands | Not implemented | No protected-command recognition pipeline exists |
+| Real-time verification | Not implemented | No live/streaming pipeline exists |
+| Custom team dataset | **NOT STARTED / PENDING** | Collect consented, labeled team face and voice data. Keep it in a separate dataset and define enrollment, validation, and test recordings without reuse across partitions. Do not merge it into VidTIMIT results. |
+
+DB1_B–DB3_B fingerprint identities are not linked to VidTIMIT speakers, so a three-modality experiment cannot claim genuine same-person evidence. The common Face/Voice comparison uses VidTIMIT identities and session protocol. Session 2 has only 86 recordings (86 genuine and 3,612 impostor pair trials), limiting threshold precision; fingerprint has only 30 real identities. The dataset citation is C. Sanderson and B. C. Lovell, “Multi-Region Probabilistic Histograms for Robust and Scalable Identity Inference,” LNCS 5558, 199–208 (2009). Confirm redistribution terms before sharing raw data.
+
+The current source tree has no implementation files for speech commands or real-time verification; `main.py` is empty and `app/` has no application implementation. The directory illustration above should be read as conceptual, not as a claim that every listed subfolder exists.
+
+## Viva Preparation
+
+- **HOG and LBP?** HOG summarizes local gradient orientations; LBP encodes local texture through neighbor intensity comparisons.
+- **MFCC, ZCR, RMS?** MFCC describes spectral envelope, ZCR measures sign changes, and RMS measures frame energy; mean and standard deviation summarize each recording.
+- **Verification versus identification?** Verification tests a claimed identity with a binary genuine/impostor decision; identification searches among identities.
+- **Early fusion?** Face and Voice vectors are concatenated before verification-model training; dimensions and scaling can affect each modality’s contribution.
+- **Hierarchy?** Face score decides directly above/below two cutoffs; only uncertain trials are escalated to Voice.
+- **FAR and FRR?** FAR is impostor acceptance (security risk); FRR is genuine rejection (usability cost). Thresholds trade them off.
+- **Leakage prevention?** Session 1 fits/enrolls, Session 2 selects thresholds, and frozen decisions are evaluated on Session 3.
+- **Why traditional ML?** Deep Learning is disallowed; the verification pipelines use handcrafted descriptors with SVM/Random Forest models.
+- **Fingerprint limitations?** Few identities/impressions, high FRR under low-FAR operation, and easier cross-database impostor trials.
+
+## Conclusion
 
 This project demonstrates a traditional Machine Learning-based multimodal biometric verification system using Face and Voice information.
 
