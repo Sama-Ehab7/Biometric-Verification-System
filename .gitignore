@@ -38,6 +38,5 @@ Thumbs.db
 # Downloaded packages
 wheels/
 
-.venv/
-__pycache__/
-*.py[cod]
+# Enrolled people (real face data) - never commit
+backend/enrolled/
