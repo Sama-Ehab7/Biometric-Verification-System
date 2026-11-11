@@ -37,3 +37,6 @@ Thumbs.db
 
 # Downloaded packages
 wheels/
+
+# Enrolled people (real face data) - never commit
+backend/enrolled/
