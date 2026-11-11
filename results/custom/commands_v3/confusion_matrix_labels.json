@@ -1,0 +1,5 @@
+{
+  "axis_order": ["open", "close", "start", "stop", "help", "unknown"],
+  "note": "The existing evaluation.json contains a 6 by 6 confusion matrix. This companion records the omitted sixth-axis label without rewriting the saved evaluation result.",
+  "total_test_samples": 10
+}

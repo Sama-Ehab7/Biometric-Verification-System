@@ -1,0 +1,133 @@
+{
+  "scope": "experimental custom speaker verification and closed-set identification",
+  "manifest": "data\\processed\\custom_audio_v3\\custom_voice_grouped_split_manifest.csv",
+  "split_protocol": "training pairs from canonical train recordings; model and verification threshold selected on validation; test split opened once after selection",
+  "feature_method": "32 kHz mono; 13 MFCC mean/std + ZCR mean/std + RMS mean/std",
+  "feature_dimension": 30,
+  "counts": {
+    "train": {
+      "nour": 3,
+      "sama": 6
+    },
+    "validation": {
+      "nour": 1,
+      "sama": 2
+    },
+    "test": {
+      "nour": 1,
+      "sama": 2
+    }
+  },
+  "source_paths": {
+    "train": [
+      "data/raw/custom/voice/test/nour/WhatsApp Audio 2026-11-11 at 10.46.47 PM.mp4",
+      "data/raw/custom/voice/train/nour/WhatsApp Audio 2026-11-11 at 10.46.48 PM (1).mp4",
+      "data/raw/custom/voice/train/nour/WhatsApp Audio 2026-11-11 at 10.46.48 PM.mp4",
+      "data/raw/custom/voice/test/sama/Fatma Al Zahraa Street 3.m4a.mp4",
+      "data/raw/custom/voice/train/sama/Fatma Al Zahraa Street 6.m4a.mp4",
+      "data/raw/custom/voice/train/sama/Fatma Al Zahraa Street 7.m4a.mp4",
+      "data/raw/custom/voice/train/sama/Fatma Al Zahraa Street 8.m4a.mp4",
+      "data/raw/custom/voice/train/sama/Fatma Al Zahraa Street 9.m4a.mp4",
+      "data/raw/custom/voice/validation/sama/Fatma Al Zahraa Street 2.m4a.mp4"
+    ],
+    "validation": [
+      "data/raw/custom/voice/test/nour/WhatsApp Audio 2026-11-11 at 10.46.47 PM (1).mp4",
+      "data/raw/custom/voice/test/sama/Fatma Al Zahraa Street 4.m4a.mp4",
+      "data/raw/custom/voice/validation/sama/Fatma Al Zahraa Street.m4a.mp4"
+    ],
+    "test": [
+      "data/raw/custom/voice/train/nour/WhatsApp Audio 2026-11-11 at 10.46.48 PM (2).mp4",
+      "data/raw/custom/voice/train/sama/Fatma Al Zahraa Street 10.m4a.mp4",
+      "data/raw/custom/voice/train/sama/Fatma Al Zahraa Street 5.m4a.mp4"
+    ]
+  },
+  "training_trials": 18,
+  "validation_model_selection": {
+    "svm": {
+      "trials": 6,
+      "threshold": 0.8866929906570039,
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "far": 0.0,
+      "frr": 0.0,
+      "roc_auc": 1.0,
+      "confusion_matrix": {
+        "tn": 3,
+        "fp": 0,
+        "fn": 0,
+        "tp": 3
+      }
+    },
+    "random_forest": {
+      "trials": 6,
+      "threshold": 0.87,
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "far": 0.0,
+      "frr": 0.0,
+      "roc_auc": 1.0,
+      "confusion_matrix": {
+        "tn": 3,
+        "fp": 0,
+        "fn": 0,
+        "tp": 3
+      }
+    }
+  },
+  "selected_verifier": "svm",
+  "threshold_split": "validation",
+  "test_verification": {
+    "trials": 6,
+    "threshold": 0.8866929906570039,
+    "accuracy": 0.8333333333333334,
+    "precision": 1.0,
+    "recall": 0.6666666666666666,
+    "f1": 0.8,
+    "far": 0.0,
+    "frr": 0.3333333333333333,
+    "roc_auc": 1.0,
+    "confusion_matrix": {
+      "tn": 3,
+      "fp": 0,
+      "fn": 1,
+      "tp": 2
+    }
+  },
+  "test_identification": {
+    "samples": 3,
+    "accuracy_with_abstention": 1.0,
+    "unknown_predictions": 0,
+    "confidence_threshold": 0.7912644074996609,
+    "threshold_split": "validation",
+    "predictions": [
+      {
+        "source": "data/raw/custom/voice/train/nour/WhatsApp Audio 2026-11-11 at 10.46.48 PM (2).mp4",
+        "actual": "nour",
+        "predicted": "nour",
+        "confidence": 0.822323503201987
+      },
+      {
+        "source": "data/raw/custom/voice/train/sama/Fatma Al Zahraa Street 10.m4a.mp4",
+        "actual": "sama",
+        "predicted": "sama",
+        "confidence": 0.8835356874468807
+      },
+      {
+        "source": "data/raw/custom/voice/train/sama/Fatma Al Zahraa Street 5.m4a.mp4",
+        "actual": "sama",
+        "predicted": "sama",
+        "confidence": 0.9068538574220102
+      }
+    ]
+  },
+  "limitations": [
+    "Only 5 unique Nour and 10 unique Sama voice recordings exist; train has 3 and 6 clips, respectively.",
+    "Six held-out clips create only 12 claimed-speaker trials; estimates have high uncertainty.",
+    "No independent unknown speakers are available; unknown rejection is not validated.",
+    "Recordings may differ in channel, environment, language and content; recording/session metadata is unavailable."
+  ]
+}

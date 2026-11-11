@@ -1,0 +1,360 @@
+{
+  "dataset": "data\\raw\\custom\\face",
+  "split_manifest": "data\\processed\\custom_face_v1\\custom_face_split_manifest.csv",
+  "split_policy": "perceptual near-duplicate groups are kept in one split; train=fitting; validation=selection; test is first read after selection is frozen, then used for final evaluation",
+  "test_identity_counts": {
+    "nour": 4,
+    "sama": 4
+  },
+  "validation_identity_counts": {
+    "nour": 4,
+    "sama": 3
+  },
+  "train_identity_counts": {
+    "nour": 12,
+    "sama": 13
+  },
+  "models": {
+    "svm": {
+      "threshold": 0.6508407787089971,
+      "identification_threshold": 0.6508407787089971,
+      "validation": {
+        "threshold": 0.6508407787089971,
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "far": 0.0,
+        "frr": 0.0,
+        "roc_auc": 1.0,
+        "confusion_matrix": {
+          "tn": 7,
+          "fp": 0,
+          "fn": 0,
+          "tp": 7
+        },
+        "trials": 14
+      },
+      "test": {
+        "threshold": 0.6508407787089971,
+        "accuracy": 0.875,
+        "precision": 1.0,
+        "recall": 0.75,
+        "f1": 0.8571428571428571,
+        "far": 0.0,
+        "frr": 0.25,
+        "roc_auc": 1.0,
+        "confusion_matrix": {
+          "tn": 8,
+          "fp": 0,
+          "fn": 2,
+          "tp": 6
+        },
+        "trials": 16
+      },
+      "test_rows": [
+        {
+          "file": "test/nour/face_01.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "nour",
+          "label": 1,
+          "score": 0.8334847441853461,
+          "decision": 1
+        },
+        {
+          "file": "test/nour/face_01.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "sama",
+          "label": 0,
+          "score": 0.16651525581465373,
+          "decision": 0
+        },
+        {
+          "file": "test/nour/face_02.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "nour",
+          "label": 1,
+          "score": 0.6488767413322227,
+          "decision": 0
+        },
+        {
+          "file": "test/nour/face_02.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "sama",
+          "label": 0,
+          "score": 0.3511232586677773,
+          "decision": 0
+        },
+        {
+          "file": "test/nour/face_03.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "nour",
+          "label": 1,
+          "score": 0.6907189955011515,
+          "decision": 1
+        },
+        {
+          "file": "test/nour/face_03.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "sama",
+          "label": 0,
+          "score": 0.30928100449884854,
+          "decision": 0
+        },
+        {
+          "file": "test/nour/face_04.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "nour",
+          "label": 1,
+          "score": 0.6412456107681173,
+          "decision": 0
+        },
+        {
+          "file": "test/nour/face_04.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "sama",
+          "label": 0,
+          "score": 0.3587543892318827,
+          "decision": 0
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.06 PM.jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "nour",
+          "label": 0,
+          "score": 0.06510179432060952,
+          "decision": 0
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.06 PM.jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "sama",
+          "label": 1,
+          "score": 0.9348982056793904,
+          "decision": 1
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.07 PM (1).jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "nour",
+          "label": 0,
+          "score": 0.05878945502592613,
+          "decision": 0
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.07 PM (1).jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "sama",
+          "label": 1,
+          "score": 0.9412105449740737,
+          "decision": 1
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.07 PM.jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "nour",
+          "label": 0,
+          "score": 0.05767057944257222,
+          "decision": 0
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.07 PM.jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "sama",
+          "label": 1,
+          "score": 0.9423294205574275,
+          "decision": 1
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.08 PM (2).jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "nour",
+          "label": 0,
+          "score": 0.04534498599001666,
+          "decision": 0
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.08 PM (2).jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "sama",
+          "label": 1,
+          "score": 0.9546550140099834,
+          "decision": 1
+        }
+      ]
+    },
+    "random_forest": {
+      "threshold": 0.5133333333333333,
+      "identification_threshold": 0.5133333333333333,
+      "validation": {
+        "threshold": 0.5133333333333333,
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "far": 0.0,
+        "frr": 0.0,
+        "roc_auc": 1.0,
+        "confusion_matrix": {
+          "tn": 7,
+          "fp": 0,
+          "fn": 0,
+          "tp": 7
+        },
+        "trials": 14
+      },
+      "test": {
+        "threshold": 0.5133333333333333,
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "far": 0.0,
+        "frr": 0.0,
+        "roc_auc": 1.0,
+        "confusion_matrix": {
+          "tn": 8,
+          "fp": 0,
+          "fn": 0,
+          "tp": 8
+        },
+        "trials": 16
+      },
+      "test_rows": [
+        {
+          "file": "test/nour/face_01.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "nour",
+          "label": 1,
+          "score": 0.66,
+          "decision": 1
+        },
+        {
+          "file": "test/nour/face_01.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "sama",
+          "label": 0,
+          "score": 0.34,
+          "decision": 0
+        },
+        {
+          "file": "test/nour/face_02.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "nour",
+          "label": 1,
+          "score": 0.6266666666666667,
+          "decision": 1
+        },
+        {
+          "file": "test/nour/face_02.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "sama",
+          "label": 0,
+          "score": 0.37333333333333335,
+          "decision": 0
+        },
+        {
+          "file": "test/nour/face_03.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "nour",
+          "label": 1,
+          "score": 0.62,
+          "decision": 1
+        },
+        {
+          "file": "test/nour/face_03.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "sama",
+          "label": 0,
+          "score": 0.38,
+          "decision": 0
+        },
+        {
+          "file": "test/nour/face_04.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "nour",
+          "label": 1,
+          "score": 0.5733333333333334,
+          "decision": 1
+        },
+        {
+          "file": "test/nour/face_04.jpg",
+          "actual_identity": "nour",
+          "claimed_identity": "sama",
+          "label": 0,
+          "score": 0.4266666666666667,
+          "decision": 0
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.06 PM.jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "nour",
+          "label": 0,
+          "score": 0.1,
+          "decision": 0
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.06 PM.jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "sama",
+          "label": 1,
+          "score": 0.9,
+          "decision": 1
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.07 PM (1).jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "nour",
+          "label": 0,
+          "score": 0.17,
+          "decision": 0
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.07 PM (1).jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "sama",
+          "label": 1,
+          "score": 0.83,
+          "decision": 1
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.07 PM.jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "nour",
+          "label": 0,
+          "score": 0.17666666666666667,
+          "decision": 0
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.07 PM.jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "sama",
+          "label": 1,
+          "score": 0.8233333333333334,
+          "decision": 1
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.08 PM (2).jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "nour",
+          "label": 0,
+          "score": 0.10666666666666667,
+          "decision": 0
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.08 PM (2).jpeg",
+          "actual_identity": "sama",
+          "claimed_identity": "sama",
+          "label": 1,
+          "score": 0.8933333333333333,
+          "decision": 1
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Only two identities and a small image dataset are available.",
+    "Validation-derived thresholds have high uncertainty.",
+    "No independent unknown-identity samples exist, so open-set rejection is not validated."
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "evaluation_split": "test",
+  "models": {
+    "svm": {
+      "threshold": 0.6515545982585643,
+      "threshold_split": "validation",
+      "test_images": 8,
+      "accuracy_including_unknown_rejection": 0.75,
+      "unknown_predictions": 2,
+      "per_image": [
+        {
+          "file": "test/nour/face_01.jpg",
+          "actual": "nour",
+          "predicted": "nour",
+          "score": 0.8338029259273898
+        },
+        {
+          "file": "test/nour/face_02.jpg",
+          "actual": "nour",
+          "predicted": "unknown",
+          "score": 0.6494231563842648
+        },
+        {
+          "file": "test/nour/face_03.jpg",
+          "actual": "nour",
+          "predicted": "nour",
+          "score": 0.6919678851300656
+        },
+        {
+          "file": "test/nour/face_04.jpg",
+          "actual": "nour",
+          "predicted": "unknown",
+          "score": 0.6417461965812022
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.06 PM.jpeg",
+          "actual": "sama",
+          "predicted": "sama",
+          "score": 0.9339379279325246
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.07 PM (1).jpeg",
+          "actual": "sama",
+          "predicted": "sama",
+          "score": 0.9407623615773553
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.07 PM.jpeg",
+          "actual": "sama",
+          "predicted": "sama",
+          "score": 0.9411723217192678
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.08 PM (2).jpeg",
+          "actual": "sama",
+          "predicted": "sama",
+          "score": 0.9543830839876134
+        }
+      ]
+    },
+    "random_forest": {
+      "threshold": 0.5566666666666666,
+      "threshold_split": "validation",
+      "test_images": 8,
+      "accuracy_including_unknown_rejection": 1.0,
+      "unknown_predictions": 0,
+      "per_image": [
+        {
+          "file": "test/nour/face_01.jpg",
+          "actual": "nour",
+          "predicted": "nour",
+          "score": 0.6766666666666666
+        },
+        {
+          "file": "test/nour/face_02.jpg",
+          "actual": "nour",
+          "predicted": "nour",
+          "score": 0.6866666666666666
+        },
+        {
+          "file": "test/nour/face_03.jpg",
+          "actual": "nour",
+          "predicted": "nour",
+          "score": 0.6433333333333333
+        },
+        {
+          "file": "test/nour/face_04.jpg",
+          "actual": "nour",
+          "predicted": "nour",
+          "score": 0.59
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.06 PM.jpeg",
+          "actual": "sama",
+          "predicted": "sama",
+          "score": 0.8866666666666667
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.07 PM (1).jpeg",
+          "actual": "sama",
+          "predicted": "sama",
+          "score": 0.8166666666666667
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.07 PM.jpeg",
+          "actual": "sama",
+          "predicted": "sama",
+          "score": 0.83
+        },
+        {
+          "file": "test/sama/WhatsApp Image 2026-11-11 at 9.05.08 PM (2).jpeg",
+          "actual": "sama",
+          "predicted": "sama",
+          "score": 0.9066666666666666
+        }
+      ]
+    }
+  },
+  "limitation": "Only known identities occur in the test split; unknown-identity rejection is not measured."
+}

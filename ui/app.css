@@ -148,6 +148,8 @@ code { font-family: var(--mono); font-size: 0.85em; color: var(--cyan); }
 .status.online { border-color: rgba(16, 185, 129, 0.45); color: var(--text); }
 .status.online .dot { background: var(--ok); }
 .status.demo .dot { background: var(--warn); }
+.custom-demo-link { padding: 8px 14px; border: 1px solid rgba(34, 211, 238, 0.4); border-radius: 999px; color: var(--cyan); text-decoration: none; font-size: 0.84rem; }
+.custom-demo-link:hover { background: rgba(34, 211, 238, 0.08); color: #fff; }
 @keyframes ping { 75%, 100% { transform: scale(2.6); opacity: 0; } }
 
 /* ---------- layout ---------- */

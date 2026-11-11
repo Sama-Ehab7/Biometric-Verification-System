@@ -1,0 +1,267 @@
+{
+  "scope": "command classification only; no speaker authentication or execution",
+  "dataset": "data\\processed\\custom_audio_v3\\converted\\commands",
+  "conversion_manifest": "data/processed/custom_audio_v3/audio_conversion_integrity_manifest.csv",
+  "usable_wav_counts": {
+    "train": 20,
+    "validation": 10,
+    "test": 10
+  },
+  "speaker_distribution": {
+    "train": [
+      "nour",
+      "sama"
+    ],
+    "validation": [
+      "nour",
+      "sama"
+    ],
+    "test": [
+      "nour",
+      "sama"
+    ]
+  },
+  "speaker_counts": {
+    "train": {
+      "nour": 10,
+      "sama": 10
+    },
+    "validation": {
+      "nour": 5,
+      "sama": 5
+    },
+    "test": {
+      "nour": 5,
+      "sama": 5
+    }
+  },
+  "class_distribution": {
+    "train": {
+      "open": 4,
+      "close": 4,
+      "start": 4,
+      "stop": 4,
+      "help": 4
+    },
+    "validation": {
+      "open": 2,
+      "close": 2,
+      "start": 2,
+      "stop": 2,
+      "help": 2
+    },
+    "test": {
+      "open": 2,
+      "close": 2,
+      "start": 2,
+      "stop": 2,
+      "help": 2
+    }
+  },
+  "selection": {
+    "svm": {
+      "validation_macro_f1": 0.8933333333333333,
+      "validation_accuracy": 0.9
+    },
+    "random_forest": {
+      "validation_macro_f1": 0.8933333333333333,
+      "validation_accuracy": 0.9
+    }
+  },
+  "selected_model": "svm",
+  "unknown_rejection": {
+    "confidence_threshold": 0.27002225047705797,
+    "selection": "minimum correct-class validation confidence; no unknown validation samples"
+  },
+  "test": {
+    "accuracy": 0.7,
+    "macro_f1": 0.6476190476190476,
+    "coverage": 1.0,
+    "selective_accuracy": 0.7,
+    "per_command": {
+      "open": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 2.0
+      },
+      "close": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1-score": 0.6666666666666666,
+        "support": 2.0
+      },
+      "start": {
+        "precision": 0.4,
+        "recall": 1.0,
+        "f1-score": 0.5714285714285714,
+        "support": 2.0
+      },
+      "stop": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 2.0
+      },
+      "help": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 2.0
+      },
+      "accuracy": 0.7,
+      "macro avg": {
+        "precision": 0.6799999999999999,
+        "recall": 0.7,
+        "f1-score": 0.6476190476190476,
+        "support": 10.0
+      },
+      "weighted avg": {
+        "precision": 0.6799999999999999,
+        "recall": 0.7,
+        "f1-score": 0.6476190476190476,
+        "support": 10.0
+      }
+    },
+    "per_speaker": {
+      "nour": {
+        "accuracy": 0.8,
+        "samples": 5
+      },
+      "sama": {
+        "accuracy": 0.6,
+        "samples": 5
+      }
+    },
+    "confusion_matrix_labels": [
+      "open",
+      "close",
+      "start",
+      "stop",
+      "help"
+    ],
+    "confusion_matrix": [
+      [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        2,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        2,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "rows": [
+      {
+        "file": "test/nour/open/open_004.wav",
+        "speaker": "nour",
+        "actual": "open",
+        "predicted": "open",
+        "confidence": 0.5915460767838112
+      },
+      {
+        "file": "test/nour/close/close_004.wav",
+        "speaker": "nour",
+        "actual": "close",
+        "predicted": "close",
+        "confidence": 0.3075733425677804
+      },
+      {
+        "file": "test/nour/start/start_004.wav",
+        "speaker": "nour",
+        "actual": "start",
+        "predicted": "start",
+        "confidence": 0.39286820586695315
+      },
+      {
+        "file": "test/nour/stop/stop_004.wav",
+        "speaker": "nour",
+        "actual": "stop",
+        "predicted": "start",
+        "confidence": 0.48570592318733347
+      },
+      {
+        "file": "test/nour/help/help_004.wav",
+        "speaker": "nour",
+        "actual": "help",
+        "predicted": "help",
+        "confidence": 0.43078393095357187
+      },
+      {
+        "file": "test/sama/open/open_004.wav",
+        "speaker": "sama",
+        "actual": "open",
+        "predicted": "open",
+        "confidence": 0.4527075823704925
+      },
+      {
+        "file": "test/sama/close/close_004.wav",
+        "speaker": "sama",
+        "actual": "close",
+        "predicted": "start",
+        "confidence": 0.3541724649061532
+      },
+      {
+        "file": "test/sama/start/start_004.wav",
+        "speaker": "sama",
+        "actual": "start",
+        "predicted": "start",
+        "confidence": 0.2997497512461491
+      },
+      {
+        "file": "test/sama/stop/Fatma Al Zahraa Street 4.m4a (3).wav",
+        "speaker": "sama",
+        "actual": "stop",
+        "predicted": "start",
+        "confidence": 0.3057991635195828
+      },
+      {
+        "file": "test/sama/help/help_004.wav",
+        "speaker": "sama",
+        "actual": "help",
+        "predicted": "help",
+        "confidence": 0.4693789748468268
+      }
+    ]
+  },
+  "limitation": "The command corpus has only four training clips, two validation clips and two test clips per command. The test set is small and the unknown confidence threshold has no unknown-person/noise examples."
+}

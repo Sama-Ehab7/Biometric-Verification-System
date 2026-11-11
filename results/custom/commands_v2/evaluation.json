@@ -1,0 +1,175 @@
+{
+  "scope": "command classification only; no speaker authentication or execution",
+  "dataset": "data\\raw\\custom\\voice\\commands",
+  "usable_wav_counts": {
+    "train": 10,
+    "validation": 5,
+    "test": 5
+  },
+  "speaker_distribution": {
+    "train": [
+      "nour"
+    ],
+    "validation": [
+      "nour"
+    ],
+    "test": [
+      "nour"
+    ]
+  },
+  "class_distribution": {
+    "train": {
+      "open": 2,
+      "close": 2,
+      "start": 2,
+      "stop": 2,
+      "help": 2
+    },
+    "validation": {
+      "open": 1,
+      "close": 1,
+      "start": 1,
+      "stop": 1,
+      "help": 1
+    },
+    "test": {
+      "open": 1,
+      "close": 1,
+      "start": 1,
+      "stop": 1,
+      "help": 1
+    }
+  },
+  "selection": {
+    "svm": {
+      "validation_macro_f1": 1.0,
+      "validation_accuracy": 1.0
+    },
+    "random_forest": {
+      "validation_macro_f1": 1.0,
+      "validation_accuracy": 1.0
+    }
+  },
+  "selected_model": "svm",
+  "test": {
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "per_command": {
+      "open": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 1.0
+      },
+      "close": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 1.0
+      },
+      "start": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 1.0
+      },
+      "stop": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 1.0
+      },
+      "help": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 1.0
+      },
+      "accuracy": 1.0,
+      "macro avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 5.0
+      },
+      "weighted avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 5.0
+      }
+    },
+    "confusion_matrix_labels": [
+      "open",
+      "close",
+      "start",
+      "stop",
+      "help"
+    ],
+    "confusion_matrix": [
+      [
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        1
+      ]
+    ],
+    "rows": [
+      {
+        "file": "test/nour/open/open_004.wav",
+        "actual": "open",
+        "predicted": "open"
+      },
+      {
+        "file": "test/nour/close/close_004.wav",
+        "actual": "close",
+        "predicted": "close"
+      },
+      {
+        "file": "test/nour/start/start_004.wav",
+        "actual": "start",
+        "predicted": "start"
+      },
+      {
+        "file": "test/nour/stop/stop_004.wav",
+        "actual": "stop",
+        "predicted": "stop"
+      },
+      {
+        "file": "test/nour/help/help_004.wav",
+        "actual": "help",
+        "predicted": "help"
+      }
+    ]
+  },
+  "limitation": "All available WAV clips are Nour-only (two train, one validation and one test example per command); Sama clips are MP4 and could not be decoded. Test results are descriptive only."
+}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Custom Team Verification</title>
+  <meta name="theme-color" content="#060913">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css">
+  <style>
+    .custom-steps { grid-template-columns: repeat(4, max-content); }
+    .media-preview { display:block; width:100%; max-height:250px; object-fit:contain; border-radius:14px; background:var(--glass-input); }
+    .media-preview[hidden] { display:none; }
+    .stage-card[aria-disabled="true"] { opacity:.62; }
+    .stage-card .stage-status { min-height:24px; color:var(--text-2); font-size:.84rem; margin-top:12px; }
+    .stage-card .stage-status.ok { color:var(--ok-text); }
+    .stage-card .stage-status.bad { color:var(--bad-text); }
+    .fingerprint-map { margin:12px 0; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--glass-input); color:var(--text-2); font-size:.82rem; }
+    .fingerprint-map summary { color:var(--cyan); cursor:pointer; font-weight:600; }
+    .fingerprint-map p { margin-top:10px; overflow-wrap:anywhere; }
+    .summary-list { display:grid; gap:10px; margin-top:16px; }
+    .summary-row { display:flex; justify-content:space-between; gap:12px; padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--glass-card); }
+    .summary-row span:last-child { font-family:var(--mono); text-align:right; }
+    .decision-pill { display:inline-flex; padding:5px 10px; border-radius:999px; font-size:.75rem; font-weight:700; letter-spacing:.06em; background:var(--surface-2); }
+    .decision-pill.accept { color:var(--ok-text); border:1px solid rgba(16,185,129,.4); }
+    .decision-pill.reject { color:var(--bad-text); border:1px solid rgba(239,68,68,.4); }
+    .workflow-note { margin-top:14px; color:var(--text-2); font-size:.84rem; }
+    .command-panel { margin-top:24px; }
+    .command-panel .go { min-width:220px; }
+    .media-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    .media-actions .ghost { flex:1 1 140px; }
+    #fingerprintFile { display:block; width:100%; margin-top:12px; color:var(--text-2); }
+    .camera-live { width:100%; max-height:260px; object-fit:cover; border-radius:14px; border:1px solid var(--line-2); background:#03050b; }
+    @media(max-width:1000px){.custom-steps{grid-template-columns:repeat(2,max-content)}}
+    @media(max-width:600px){.custom-steps{grid-template-columns:repeat(2,minmax(0,1fr));}.custom-steps li{font-size:.72rem;padding-right:8px}}
+  </style>
+</head>
+<body>
+  <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="particles" aria-hidden="true"></div>
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><svg viewBox="0 0 48 48" width="40" height="40"><path d="M24 4c-8 0-14 5-15 12m30 0C38 9 32 4 24 4m-9 34c-3-4-4-8-4-13 0-7 6-12 13-12s13 5 13 12m-19 18c-2-4-3-8-3-12 0-5 4-8 9-8s9 3 9 8c0 3-1 6-2 9m-11 6c-1-3-2-7-2-11 0-2 2-4 4-4s4 2 4 4c0 5-1 9-3 13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+      <div><h1>Custom Team Verification</h1><p>Face → Voice → Fingerprint · separate experimental demo</p></div>
+    </div>
+    <div class="status demo" id="apiStatus" title="Checking the verification API"><span class="dot"></span><span id="apiStatusText">Checking backend…</span></div>
+    <a class="custom-demo-link" href="app.html">Original Face &amp; Voice</a>
+  </header>
+
+  <main class="wrap">
+    <section class="stats" aria-label="Demo overview">
+      <div class="stat"><b>3</b><span>sequential checks</span></div>
+      <div class="stat"><b>2</b><span>custom identities</span></div>
+      <div class="stat"><b>SVM</b><span>saved fingerprint model</span></div>
+      <div class="stat"><b>Demo</b><span>not security authorization</span></div>
+    </section>
+
+    <div class="layout">
+      <div class="main-col">
+        <section class="panel" aria-labelledby="verifyTitle">
+          <div class="panel-head">
+            <div><h2 id="verifyTitle">Verify a claimed identity</h2><p class="sub">Select the identity first, then complete each check in order. Each score is shown before the next modality.</p></div>
+            <ol class="steps custom-steps" aria-label="Verification progress">
+              <li id="stepIdentity" class="done"><i>1</i>Identity</li>
+              <li id="stepFace"><i>2</i>Face</li>
+              <li id="stepVoice"><i>3</i>Voice</li>
+              <li id="stepFingerprint"><i>4</i>Fingerprint</li>
+            </ol>
+          </div>
+
+          <div class="grid custom-grid">
+            <article class="card identity">
+              <h3><span>01</span> Claimed identity</h3>
+              <div class="identity-row">
+                <div><label class="field-label" for="identity">Who does the person claim to be?</label><div class="select-wrap"><select id="identity"><option value="nour">Nour</option><option value="sama">Sama</option></select></div><p class="hint">The same selected identity is used for all three checks.</p></div>
+                <div class="id-card"><div class="avatar" id="avatar">N</div><div><b id="identityName">Nour</b><small>Custom Team Demo identity</small></div></div>
+              </div>
+            </article>
+
+            <article class="card stage-card" id="faceCard">
+              <h3><span>02</span> Face verification</h3>
+              <p class="hint">Start the webcam and capture one live frame. Image upload is available if camera access is unavailable.</p>
+              <div class="drop" id="faceDrop">
+                <div class="drop-empty" id="faceEmpty"><svg viewBox="0 0 24 24" width="38" height="38" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="11" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 17.5c1.2-2 3-3 5-3s3.8 1 5 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><div>Live face capture</div><small>Face the camera with good lighting</small></div>
+                <video id="faceVideo" autoplay playsinline muted hidden></video><img id="facePreview" alt="Captured face preview" hidden>
+              </div>
+              <label class="field-label" for="faceModel">Custom Face model</label><div class="select-wrap"><select id="faceModel"><option value="svm">SVM</option><option value="random_forest">Random Forest</option></select></div>
+              <div class="media-actions"><button class="ghost" id="cameraStart" type="button">📷 Start camera</button><button class="ghost primary-ghost" id="faceCapture" type="button" disabled>Capture photo</button><button class="ghost" id="cameraStop" type="button" disabled>Stop camera</button><button class="ghost" id="faceUploadButton" type="button">Upload photo</button></div>
+              <input id="faceUpload" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+              <button class="go small-go" id="faceVerify" type="button" disabled><span class="go-label">Verify Face</span></button>
+              <p class="stage-status" id="faceStatus" role="status" aria-live="polite">Waiting for a face image.</p>
+            </article>
+
+            <article class="card stage-card" id="voiceCard" aria-disabled="true">
+              <h3><span>03</span> Voice verification</h3>
+              <p class="hint">Record a clear 3–5 second sample of the selected person in a quiet space, or upload a WAV. Genuine live recordings can still be rejected by this small experimental model.</p>
+              <div class="voice-box" id="voiceBox"><canvas id="wave" height="110" aria-hidden="true"></canvas><div class="timer" id="timer">00:00</div></div>
+              <div class="media-actions"><button class="ghost rec" id="recordVoice" type="button" disabled>● Record</button><button class="ghost" id="voiceUploadButton" type="button" disabled>⇪ Upload WAV</button></div>
+              <input id="voiceUpload" type="file" accept="audio/*,.wav" hidden><audio id="voicePlayer" controls hidden></audio>
+              <button class="go small-go" id="voiceVerify" type="button" disabled><span class="go-label">Verify Voice</span></button>
+              <p class="stage-status" id="voiceStatus" role="status" aria-live="polite">Complete Face verification first.</p>
+            </article>
+
+            <article class="card stage-card" id="fingerprintCard" aria-disabled="true">
+              <h3><span>04</span> Fingerprint verification</h3>
+              <p class="hint">The selected identity is resolved using the project mapping CSV.</p>
+              <p class="hint">Upload a fingerprint image. The existing saved Fingerprint SVM and enrollment template are used with the mapped identity.</p>
+              <details class="fingerprint-map"><summary>Fingerprint identity and sample paths</summary>
+                <p><b>Assumed demo mappings:</b> Nour → DB1_B_101; Sama → DB1_B_102.</p>
+                <p><b>Nour enrollment:</b> <code>custom-data/fingerprint/enrollment/nour/101_1.tif</code> through <code>101_4.tif</code>. Test probes: <code>custom-data/fingerprint/test/nour/101_7.tif</code> and <code>101_8.tif</code>.</p>
+                <p><b>Sama enrollment:</b> <code>custom-data/fingerprint/enrollment/sama/102_1.tif</code> through <code>102_4.tif</code>. Test probes: <code>custom-data/fingerprint/test/sama/102_7.tif</code> and <code>102_8.tif</code>.</p>
+                <p>These aliases are a demo convention from <code>custom-data/fingerprint/metadata/fingerprint_mapping.csv</code>, not verified real-person identity matches.</p>
+              </details>
+              <input id="fingerprintFile" type="file" accept="image/jpeg,image/png,image/tiff,image/webp,.tif,.tiff">
+              <img class="media-preview" id="fingerprintPreview" alt="Fingerprint image preview" hidden>
+              <button class="go small-go" id="fingerprintVerify" type="button" disabled><span class="go-label">Verify Fingerprint</span></button>
+              <p class="stage-status" id="fingerprintStatus" role="status" aria-live="polite">Complete Voice verification first.</p>
+            </article>
+          </div>
+
+          <div class="actions"><button class="link" id="resetFlow" type="button">Start over</button></div>
+          <p class="needs" id="flowStatus">Choose Nour or Sama to begin.</p>
+          <p class="workflow-note">This custom demonstration uses a small dataset. A successful result is not a security guarantee; protected actions remain disabled.</p>
+        </section>
+
+        <section class="panel command-panel" aria-labelledby="commandTitle">
+          <div class="panel-head"><div><h2 id="commandTitle">Optional speech command classifier</h2><p class="sub">Classification only. It does not authenticate or authorize a person.</p></div></div>
+          <div class="card"><label class="field-label" for="commandAudio">WAV command sample</label><input id="commandAudio" type="file" accept="audio/wav,.wav"><div class="row"><button class="ghost" id="classifyCommand" type="button">Classify command</button><button class="ghost" id="commandExecute" type="button">Protected execution status</button></div><p id="commandResult" class="stage-status" role="status" aria-live="polite">Protected command execution is disabled.</p></div>
+        </section>
+      </div>
+
+      <aside class="side-col">
+        <section class="panel result" id="resultPanel" aria-live="polite">
+          <h2>Verification result</h2><p class="sub" id="resultHeadline">Waiting for the first face check.</p>
+          <div class="summary-list">
+            <div class="summary-row"><span>Claimed identity</span><span id="resultIdentity">Nour</span></div>
+            <div class="summary-row"><span>Face</span><span id="faceDecision" class="decision-pill">Pending</span></div>
+            <div class="summary-row"><span>Voice</span><span id="voiceDecision" class="decision-pill">Pending</span></div>
+            <div class="summary-row"><span>Fingerprint</span><span id="fingerprintDecision" class="decision-pill">Pending</span></div>
+            <div class="summary-row"><b>All checks</b><span id="finalDecision" class="decision-pill">Pending</span></div>
+          </div>
+          <div class="flow"><h3 class="pipe-title">Sequential decision path</h3><ol class="idle-steps"><li><i>1</i> Face model verifies the live image</li><li><i>2</i> Voice verifier checks the selected claim</li><li><i>3</i> Saved Fingerprint SVM checks the uploaded image</li></ol></div>
+          <p class="workflow-note">Each stage displays its score and frozen threshold. Overall ACCEPT is shown only when all three stages accept.</p>
+        </section>
+      </aside>
+    </div>
+  </main>
+  <footer>Biometric Verification System · Custom Team Demo · Experimental traditional ML</footer>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="custom_team_demo.js"></script>
+</body>
+</html>

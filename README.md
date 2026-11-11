@@ -4,7 +4,7 @@
 
 This project compares traditional Machine Learning biometric verification using VidTIMIT face and voice recordings. It implements Face-only, Voice-only, Early Feature Fusion, and sequential Hierarchical Face-to-Voice verification. It uses handcrafted features with SVM and Random Forest models; Deep Learning is not used by the verification pipelines.
 
-The technical audit, assignment checklist, and Fingerprint report are consolidated in this README below.
+This README includes the technical summary and results; the detailed completion inventory and final report are in `PROJECT_COMPLETION_AUDIT.md` and `FINAL_PROJECT_COMPLETION_REPORT.md`.
 
 ## Data and evaluation protocol
 
@@ -57,11 +57,13 @@ This command reads the supplied image and saved artifacts and returns a score, f
 |---|---|
 | Face-only, Voice-only, Early Fusion, Hierarchical | Implemented and evaluated |
 | Fingerprint bonus | Implemented as a separate modality; high FRR limitation documented |
-| Speech-command bonus | Not implemented |
-| Real-time verification bonus | Not implemented |
-| Custom Team Dataset | **NOT STARTED / PENDING collection** |
+| Speech-command bonus | Two-speaker Traditional ML classifier trained; small held-out set. Protected execution remains fail-closed |
+| Real-time custom demo | Browser camera and microphone capture are implemented; physical browser/device end-to-end testing is pending |
+| Custom Face | Separate grouped-split SVM/RF experiment and API; small held-out evaluation, see caveats below |
+| Custom Voice | Experimental SVM speaker verifier and closed-set identifier; unknown-speaker rejection is not validated |
+| Combined custom demo | Server-side all-of-three policy; assumed fingerprint mapping, not scientifically validated fusion |
 
-The Custom Team Dataset must be collected and evaluated separately; it is not part of the current results. The FVC identities are not linked to VidTIMIT speakers, so the project does not claim genuine three-modality fusion.
+Custom Face images and Voice/command recordings are present under `data/raw/custom/`. Windows Media Foundation decoded all 40 MP4 files to a separate 32 kHz mono WAV corpus. Voice data remains very small after duplicate grouping. FVC identities are not proven to correspond to team members, so the project does not claim scientifically validated three-modality fusion.
 
 ## Project layout
 
@@ -82,7 +84,70 @@ Biometric-Verification-System/
 └── requirements.txt      # Core dependencies plus notebook/inspection tools
 ```
 
-Speech-command and real-time directories do not contain implementations. No UI/backend application is provided.
+The original FastAPI backend and static HTML/JavaScript UI are in `backend/` and `ui/`. Open `ui/app.html` for the original research system and `ui/custom_team_demo.html` for custom Face, Voice, combined, command, and live capture demos. The custom fingerprint page is separate at `ui/custom_fingerprint_demo.html`.
+
+### Start the application (no training)
+
+From the repository root, use two terminals. These commands only start the API and static file server; they do not retrain models or regenerate evaluation artifacts.
+
+```powershell
+.venv\Scripts\python.exe -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
+```
+
+```powershell
+.venv\Scripts\python.exe -m http.server 5500 --bind 127.0.0.1
+```
+
+Open `http://127.0.0.1:5500/ui/app.html` for the original system, `http://127.0.0.1:5500/ui/custom_team_demo.html` for the custom demos, or `http://127.0.0.1:5500/ui/custom_fingerprint_demo.html` for the standalone Fingerprint page. The project slide deck is [PRESENTATION.html](PRESENTATION.html); open it through the same local server to present or print to PDF.
+
+### Submission demonstration guide
+
+Start from the repository root in two terminals. If a port is already occupied, stop the prior project server from the terminal where it was started; do not terminate an unknown process. The standard API port was occupied by an older backend during final verification, and that process returned 404 for the custom routes. The current repository backend was verified separately on port 8001. Before the demo, confirm that `/api/custom/voice/status`, `/api/custom/combined/status`, `/api/custom/commands/status`, and `/api/custom-fingerprint/test-images` return 200 from the selected API port.
+
+Terminal 1 (API):
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
+```
+
+Terminal 2 (static UI):
+
+```powershell
+.\.venv\Scripts\python.exe -m http.server 5500 --bind 127.0.0.1
+```
+
+Open `http://127.0.0.1:5500/ui/app.html` for original VidTIMIT Face→Voice verification, `http://127.0.0.1:5500/ui/custom_team_demo.html` for custom Face/Voice/combined/command/live-capture demos, and `http://127.0.0.1:5500/ui/custom_fingerprint_demo.html` for standalone Fingerprint. API checks are `http://127.0.0.1:8000/api/health` and `http://127.0.0.1:8000/api/identities`. To present the slides, open `http://127.0.0.1:5500/PRESENTATION.html`.
+
+Recommended sequence and known outcomes from actual API requests against the current repository backend on port 8001:
+
+1. Check health and identities first. The observed health response reported `mode=hierarchical`, the saved Face/Voice SVMs, `hierarchical_policy_audit.joblib`, and 43 VidTIMIT identities; `/api/identities` returned 43 speakers and no runtime-enrolled users.
+2. Demonstrate original VidTIMIT Face→Voice using a claimed VidTIMIT identity such as `fadg0` and that speaker’s raw video frame plus matching audio from the same session. Session 3 files are final-test material; do not use them to tune anything. Actual output varies by probe; no universal ACCEPT claim is made here.
+3. In the custom-team page, choose Nour or Sama first, start the webcam, capture a frame, and press **Verify Face**. The page shows score and threshold. If a physical camera is unavailable, use `data/raw/custom/face/test/nour/face_01.jpg` for an API smoke check; it previously returned score `0.8334847442`, threshold `0.6508407787`, ACCEPT. A file-backed sample is not a webcam test.
+4. After the Face check, record or upload a WAV and press **Verify Voice**. For a deterministic API smoke check, use `data/processed/custom_audio_v3/converted/voice/test/nour/WhatsApp Audio 2026-11-11 at 10.46.47 PM.wav`; the manifest assigns it to test. It previously returned score `0.9531987383`, validation-derived threshold `0.8866929907`, ACCEPT. The test corpus contains only three unique identity recordings overall.
+5. After Voice, upload a fingerprint image and press **Verify Fingerprint**. The live custom page accepts an uploaded image and calls the saved SVM/template through `/api/custom-fingerprint/verify-upload`. A repeatable test-split probe is `custom-data/fingerprint/test/nour/101_8.tif` (ACCEPT, score `0.5`, threshold `0.4540606025`); `101_7.tif` was REJECT (score `0.0018696814`). Nour/Sama↔FVC is only an assumed mapping.
+6. The custom page displays each result and shows overall ACCEPT only when all three accept. The separate `/api/custom/combined/verify` endpoint remains available for mapped test-split probes; its earlier sample response accepted all three. Neither interface proves real identity association or scientifically validated fusion.
+7. Demonstrate command classification with `data/processed/custom_audio_v3/converted/commands/test/nour/stop/stop_004.wav`. The actual probe was classified as `start` (score `0.4857059232`), illustrating the classifier’s limitations. Protected execution must remain disabled; `/api/custom/commands/execute` returned HTTP 503.
+8. Camera endpoint smoke check: the `face_01.jpg` still image passed the one-face guard; `face_02.jpg` was rejected with HTTP 422 because no face was detected. This is an API test using image files, **not** a physical browser-camera test. Browser navigation, webcam capture, and microphone capture were not physically tested.
+
+These results are sample-level API observations, separate from the saved offline evaluation metrics. Do not use the custom small-sample results to claim robust performance or unknown-speaker rejection. Leave protected actions disabled.
+
+## Custom Team Face demo
+
+Collected team Face images are present at `data/raw/custom/face/{train,validation,test}/{nour,sama}` (the named `custom-data/face/` location is absent). All 40 files decode as images. The project Haar detector finds faces in 33/40; the isolated custom pipeline therefore uses its own centered square crop, resizes to 128×128 grayscale, and extracts the 3,548-value HOG/LBP sequence-compatible representation. It does not change the original VidTIMIT preprocessing.
+
+The active isolated SVM and Random Forest models are in `saved_models/custom/face_v4/`; evaluation JSON files are in `results/custom/face_v4/`. A pHash screen grouped candidate near-duplicates before fitting. The adjusted split contains 25 train, 7 validation, and 8 test images. Thresholds were selected on validation before test evaluation. On 8 held-out images (16 correlated claims), SVM achieved 87.50% accuracy (TN/FP/FN/TP = 8/0/2/6), and RF achieved 100% (8/0/0/8). These are preliminary: only two known identities and no unknown-person examples exist; some test images form a near-duplicate pair within the test split.
+
+Run the backend and serve `ui/` from the project root using the commands below, then open `http://127.0.0.1:5500/ui/custom_team_demo.html`. The custom Face endpoints are `/api/custom/face/verify` and `/api/custom/face/identify`. Fingerprint aliases Nour/Sama are an assumed demo mapping only; they do not prove that FVC identities correspond to the team members.
+
+### Custom Voice, commands, and combined demo
+
+`src/preprocessing/prepare_custom_audio.py` decoded 40 AAC MP4 and 20 WAV recordings to isolated 32 kHz mono PCM WAV under `data/processed/custom_audio_v3/`. Original files were not modified. Five exact duplicate pairs were assigned to a single split, leaving 15 unique identity clips: Nour 3/1/1 and Sama 6/2/2 for train/validation/test. The custom Voice SVM was selected on validation; on six held-out pairwise claims it achieved 83.33% accuracy, precision 100%, recall 66.67%, F1 0.80, FAR 0%, FRR 33.33%, AUC 1.00, TN/FP/FN/TP = 3/0/1/2. The test set has only three recordings (one Nour, two Sama), so these estimates are highly uncertain. No independent unknown-speaker samples exist.
+
+The command classifier v3 uses 20/10/10 recordings across train/validation/test (four/two/two per command; both speakers occur in each split). Validation selected SVM (macro-F1 0.8933, accuracy 90%; RF tied). Test accuracy was 70%, macro-F1 0.6476, coverage 100%. The 6×6 command/unknown confusion matrix is saved in `results/custom/commands_v3/evaluation.json`. Only two test clips per command support a descriptive result. Protected command execution returns HTTP 503 because the small speaker corpus lacks unknown-speaker validation and the permission workflow remains intentionally disabled.
+
+The custom page presents a sequential identity → live Face capture/verification → Voice recording/upload/verification → uploaded Fingerprint verification flow. Its fingerprint upload route (`/api/custom-fingerprint/verify-upload`) resolves the selected Nour/Sama alias from the mapping CSV and calls the existing saved SVM/template without changing its threshold or inference behavior. The separate `/api/custom/combined/verify` API still accepts a mapped test-split Fingerprint probe and applies the server-side all-of-three rule. Both use an assumed demo association, not proof of shared real identities or scientific fusion. Physical browser/camera/microphone testing remains pending. Isolated model/results paths are `saved_models/custom/voice_v1/`, `results/custom/voice_v1/`, `saved_models/custom/commands_v3/`, and `results/custom/commands_v3/`; earlier Face and command pilots remain preserved.
+
+See [PROJECT_COMPLETION_AUDIT.md](PROJECT_COMPLETION_AUDIT.md) for the requirement status and preservation baseline. The original VidTIMIT, Fingerprint, and custom fingerprint artifacts remain separate from the custom Face models.
 
 ## Environment and dependencies
 
@@ -128,7 +193,7 @@ The Face/Voice/Fusion scripts train or select thresholds and write model/results
 
 ## Comprehensive audit record
 
-**Overall status: READY WITH LIMITATIONS.** The mandatory Face-only, Voice-only, Early Fusion, and Hierarchical systems are implemented with handcrafted features and traditional ML models. Session 3 metrics are arithmetically consistent over 3,698 trials. The Fingerprint bonus works as a separate modality but has high FRR at the selected low-FAR operating point. The Custom Team Dataset is pending; speech-command and real-time bonuses are not implemented.
+**Overall status: PARTIALLY COMPLETE; do not claim all bonuses are complete.** The mandatory VidTIMIT systems and independent Fingerprint pipeline remain intact. Custom Face/Voice experiments, a two-speaker command classifier, a fail-closed all-of-three demo policy, and webcam/microphone capture controls are implemented with isolated artifacts. The custom datasets are too small for robust unknown-speaker or generalization claims; protected command execution is disabled; hardware/browser workflows were not manually tested.
 
 ### Dataset and protocol audit
 
@@ -197,11 +262,11 @@ The validated Face/Voice security models are the `*_security.joblib` files under
 | Fingerprint evaluation | PASS | Validation threshold frozen before test; high FRR is documented. |
 | Fingerprint new-image inference | PASS | `src/verification/fingerprint_inference.py`; smoke-tested on a raw dataset image. A separately collected external sample was unavailable. |
 | No Deep Learning in verification | PASS | Mandatory pipelines use handcrafted features and SVM/RF. Neural packages are not required dependencies. |
-| Speech-command bonus | NOT STARTED | No speech-command implementation. |
-| Real-time bonus | NOT STARTED | No live/streaming verification implementation. |
-| Custom Team Dataset | NOT STARTED | Collection is pending and excluded from the VidTIMIT experiment. |
+| Speech-command bonus | PARTIAL | Two-speaker command classifier; test has two clips per command; protected execution is disabled. |
+| Real-time bonus | PARTIAL | Custom webcam/microphone capture calls real endpoints; no physical browser/device test. |
+| Custom Team Dataset | PARTIAL | Face and Voice models trained on grouped splits; only two identities and very small test sets. |
 
-Focused validation executed five tests successfully with `.venv/Scripts/python.exe -m unittest discover -s tests -v`. These checked saved-model input dimensions and score inference, Fingerprint feature parity to 1e-6, raw-image inference, invalid path/claim handling, and refusal to overwrite an existing template artifact. No full existing test suite was present. No overwrite-prone training or evaluation script was rerun.
+Focused validation executed 34 tests successfully with `.venv/Scripts/python.exe -m unittest discover -s tests -v`. These include original saved-model input dimensions and score inference, hierarchical decision-policy checks, fingerprint feature parity and alias tests, custom Face, Voice and combined inference/API checks, manifest integrity checks, and fail-closed command endpoint tests. Local Uvicorn returned successful Voice/command/combined results and camera verification; the camera guard rejected a no-face frame, and protected command execution returned HTTP 503. The static server returned the original, custom, and fingerprint pages with HTTP 200. `node --check` passed for both custom demo scripts. This does not establish real-browser/camera/microphone hardware behavior. No original-model training, threshold-selection, or evaluation script was rerun.
 
 ## Fingerprint technical report
 

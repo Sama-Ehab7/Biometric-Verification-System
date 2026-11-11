@@ -16,6 +16,11 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import config, face, voice
+from .custom_face_demo import router as custom_face_demo_router
+from .custom_commands_demo import router as custom_commands_demo_router
+from .custom_fingerprint_demo import router as custom_fingerprint_demo_router
+from .custom_voice_demo import router as custom_voice_demo_router
+from .custom_combined_demo import router as custom_combined_demo_router
 from .enrollment import EnrollmentStore, clean_name
 from .models import load_models
 from .policy import VOICE_REQUIRED, face_only_stage, is_accepted
@@ -30,6 +35,11 @@ app.add_middleware(
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
+app.include_router(custom_fingerprint_demo_router)
+app.include_router(custom_face_demo_router)
+app.include_router(custom_commands_demo_router)
+app.include_router(custom_voice_demo_router)
+app.include_router(custom_combined_demo_router)
 
 
 # --------------------------------------------------------------------------

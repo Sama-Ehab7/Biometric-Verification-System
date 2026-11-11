@@ -1,4 +1,6 @@
 data/
+custom-data/
+saved_models/
 # Virtual Environments
 .venv/
 venv/
