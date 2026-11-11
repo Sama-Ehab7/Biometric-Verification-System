@@ -16,13 +16,15 @@ const $ = (id) => document.getElementById(id);
 const fmtPct = (x, d) => (x * 100).toFixed(d ?? (Math.abs(x) < 0.1 ? 2 : 1)) + "%";
 
 // ---------- snapshot of results (used if the CSV/JSON files can't be loaded, e.g. file://) ----------
+// These are the project's FINAL (validated "_audit" / "_sequential") results.
 const SNAPSHOT = {
-  thresholds: { low_face_threshold: 0.050224, high_face_threshold: 0.171650, voice_threshold: 0.977003 },
-  stages: { total_trials: 3698, face_direct_accept: 124, face_direct_reject: 3430, voice_escalations: 144, voice_escalation_rate: 0.03894 },
+  thresholds: { low_face_threshold: 0.171650, high_face_threshold: 0.290093, voice_threshold: 0.202839 },
+  stages: { total_trials: 3698, face_direct_accept: 94, face_direct_reject: 3574, voice_escalations: 30 },
   comparison: [
     { System: "Face SVM", Accuracy: 0.98594, Precision: 0.68085, Recall: 0.74419, F1: 0.71111, FAR: 0.008306, FRR: 0.255814, "ROC-AUC": 0.96565, TN: 3582, FP: 30, FN: 22, TP: 64 },
     { System: "Voice SVM", Accuracy: 0.97215, Precision: 0.29268, Recall: 0.13953, F1: 0.18898, FAR: 0.008029, FRR: 0.860465, "ROC-AUC": 0.80095, TN: 3583, FP: 29, FN: 74, TP: 12 },
-    { System: "Hierarchical Face-Voice", Accuracy: 0.97999, Precision: 0.54839, Recall: 0.79070, F1: 0.64762, FAR: 0.015504, FRR: 0.209302, "ROC-AUC": null, TN: 3556, FP: 56, FN: 18, TP: 68 },
+    { System: "Early Feature Fusion SVM", Accuracy: 0.98405, Precision: 0.62857, Recall: 0.76744, F1: 0.69110, FAR: 0.010797, FRR: 0.232558, "ROC-AUC": 0.96835, TN: 3573, FP: 39, FN: 20, TP: 66 },
+    { System: "Hierarchical Face-Voice", Accuracy: 0.98567, Precision: 0.66667, Recall: 0.76744, F1: 0.71351, FAR: 0.009136, FRR: 0.232558, "ROC-AUC": null, TN: 3579, FP: 33, FN: 20, TP: 66 },
   ],
 };
 
@@ -37,6 +39,9 @@ const state = {
   faceFrames: [],       // what gets sent: one photo, or a burst of camera frames
   voice: null,          // Blob
   enrollPhotos: [],     // photos for "Enroll a new person"
+  enrollVoice: null,    // optional voice sample for enrollment
+  hierarchical: false,  // backend has face + voice models and the hierarchical policy
+  backendThresholds: null,
 };
 
 // ===========================================================================
@@ -95,10 +100,21 @@ function bindTip(el, html) {
 // ===========================================================================
 async function loadData() {
   const jobs = [
-    fetchText(RESULTS + "hierarchical_trial_decisions.csv").then((t) => (state.trials = parseCSV(t))),
-    fetchText(RESULTS + "hierarchical_comparison.csv").then((t) => (state.comparison = parseCSV(t))),
-    fetchText(RESULTS + "selected_thresholds.json").then((t) => (state.thresholds = JSON.parse(t))),
-    fetchText(RESULTS + "hierarchical_stage_summary.json").then((t) => (state.stages = JSON.parse(t))),
+    // The validated policy is the "_audit" thresholds, evaluated by the "_sequential" run.
+    fetchText(RESULTS + "hierarchical_trial_decisions_sequential.csv").then((t) => (state.trials = parseCSV(t))),
+    fetchText(RESULTS + "hierarchical_comparison_sequential.csv").then((t) => (state.comparison = parseCSV(t))),
+    fetchText(RESULTS + "selected_thresholds_audit.json").then((t) => {
+      if (!state.backendThresholds) state.thresholds = JSON.parse(t); // the live backend's policy wins
+    }),
+    fetchText(RESULTS + "hierarchical_stage_summary_sequential.json").then((t) => {
+      const s3 = JSON.parse(t).sessions.find((s) => s.session === "session_3");
+      state.stages = {
+        total_trials: s3.total_trials,
+        face_direct_accept: s3.direct_face_accept,
+        face_direct_reject: s3.direct_face_reject,
+        voice_escalations: s3.voice_escalations,
+      };
+    }),
   ];
   await Promise.allSettled(jobs);
 }
@@ -108,11 +124,21 @@ async function checkBackend() {
   try {
     const r = await fetch(API_BASE + "/api/health", { signal: withTimeout(2500) });
     if (!r.ok) throw new Error();
-    state.health = await r.json();
+    const h = (state.health = await r.json());
     state.backend = true;
+    state.hierarchical = h.mode === "hierarchical";
+    if (state.hierarchical) {
+      state.backendThresholds = state.thresholds = {
+        low_face_threshold: h.thresholds.low_face_threshold,
+        high_face_threshold: h.thresholds.high_face_threshold,
+        voice_threshold: h.thresholds.voice_threshold,
+      };
+    }
     el.className = "status online";
-    $("statusText").textContent = "Face model online";
-    el.title = `Connected to ${API_BASE} · ${state.health.model} · threshold ${state.health.threshold.toFixed(3)} (FAR ${state.health.far_target * 100}%)`;
+    $("statusText").textContent = state.hierarchical ? "Face + voice models online" : "Face model online";
+    el.title = state.hierarchical
+      ? `Connected to ${API_BASE} · policy ${h.policy_source} · face ${h.thresholds.low_face_threshold.toFixed(3)}–${h.thresholds.high_face_threshold.toFixed(3)} · voice ${h.thresholds.voice_threshold.toFixed(3)}`
+      : `Connected to ${API_BASE} · ${h.face_model} · threshold ${h.thresholds.face_only.toFixed(3)} (FAR ${h.thresholds.face_only_far * 100}%)`;
     $("enrollPanel").hidden = false;
   } catch {
     state.backend = false;
@@ -331,6 +357,33 @@ async function drawStaticWave(blob) {
   drawIdle();
 }
 
+// Convert any recording/upload to a 32 kHz mono 16-bit WAV - the format the
+// voice features were extracted from (src/features/voice_features.py).
+async function toWav32k(blob) {
+  const ac = new (window.AudioContext || window.webkitAudioContext)();
+  const decoded = await ac.decodeAudioData(await blob.arrayBuffer());
+  ac.close();
+  const rate = 32000;
+  const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * rate), rate);
+  const src = off.createBufferSource();
+  src.buffer = decoded;
+  src.connect(off.destination);
+  src.start();
+  const pcm = (await off.startRendering()).getChannelData(0);
+  const buf = new ArrayBuffer(44 + pcm.length * 2);
+  const v = new DataView(buf);
+  const str = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  str(0, "RIFF"); v.setUint32(4, 36 + pcm.length * 2, true); str(8, "WAVE");
+  str(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  str(36, "data"); v.setUint32(40, pcm.length * 2, true);
+  for (let i = 0; i < pcm.length; i++) {
+    const s = Math.max(-1, Math.min(1, pcm[i]));
+    v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return new File([buf], "voice.wav", { type: "audio/wav" });
+}
+
 function setVoice(blob) {
   if (!blob) return;
   state.voice = blob;
@@ -395,7 +448,11 @@ function refresh() {
   $("verify").disabled = !ready;
   const missing = [!state.face && "a face image", needVoice && !state.voice && "a voice sample"].filter(Boolean);
   $("needs").textContent = ready
-    ? (state.backend && !state.voice ? "Ready - press Verify (face verification; voice is optional)." : "Ready - press Verify.")
+    ? (state.backend && !state.voice
+        ? (state.hierarchical
+            ? "Ready - tip: add a voice sample too, in case the face score is unsure."
+            : "Ready - press Verify (face verification; voice is optional).")
+        : "Ready - press Verify.")
     : `Add ${missing.join(" and ")} to continue.`;
 }
 
@@ -413,7 +470,10 @@ $("verify").addEventListener("click", async () => {
       const fd = new FormData();
       fd.append("claimed_id", $("claimed").value);
       state.faceFrames.forEach((f, i) => fd.append("face", f, f.name || `face${i}.jpg`));
-      if (state.voice) fd.append("voice", state.voice, "voice.webm");
+      if (state.voice) {
+        try { fd.append("voice", await toWav32k(state.voice)); }
+        catch { toast("Couldn't read the voice sample - verifying with the face only."); }
+      }
       const r = await fetch(API, { method: "POST", body: fd, signal: withTimeout(30000) });
       const body = await r.json().catch(() => ({}));
       if (!r.ok) throw Object.assign(new Error(body.detail || "HTTP " + r.status), { shown: r.status === 422 || r.status === 404 });
@@ -438,16 +498,21 @@ $("verify").addEventListener("click", async () => {
   showResult(data);
 });
 
-// Turn a backend response into the shape the UI uses.
-// Expected: { accepted, score, threshold, stage, face_score?, voice_score? }
+// Turn a backend response (backend/server.py /api/verify) into the shape the UI uses.
+// stage: face_accept | face_reject | voice_accept | voice_reject | voice_required
 function normalize(d) {
-  const escalated = /voice/i.test(String(d.stage || ""));
+  const stage = String(d.stage || "");
+  const voiceRequired = stage === "voice_required";
+  const escalated = stage.startsWith("voice");
   return {
     accepted: !!d.accepted,
     escalated,
-    faceScore: d.face_score ?? (!escalated ? d.score : null),
-    voiceScore: d.voice_score ?? (escalated ? d.score : null),
-    score: Number(d.score ?? 0),
+    voiceRequired,
+    message: d.message,
+    mode: d.mode,                       // "hierarchical" or "face_only"
+    faceScore: d.face_score ?? null,
+    voiceScore: d.voice_score ?? null,
+    score: Number(voiceRequired ? d.face_score : d.score ?? 0),
     threshold: d.threshold,
     farTarget: d.far_target,
     preview: d.face_preview,
@@ -506,8 +571,9 @@ function showResult(d) {
   res.style.animation = "none";
   void res.offsetWidth;
   res.style.animation = "";
-  res.style.setProperty("--c", d.accepted ? "var(--ok)" : "var(--bad)");
-  const single = !d.demo && !d.escalated && d.threshold != null ? Number(d.threshold) : null;
+  res.style.setProperty("--c", d.voiceRequired ? "var(--warn)" : d.accepted ? "var(--ok)" : "var(--bad)");
+  // Face-only backend: one threshold. Hierarchical backend and demo: reject | escalate | accept.
+  const single = d.mode === "face_only" && d.threshold != null ? Number(d.threshold) : null;
   setupFaceGauge(single);
   $("cropFig").hidden = !d.preview;
   if (d.preview) $("cropImg").src = d.preview;
@@ -543,7 +609,12 @@ function showResult(d) {
 
   // Stage 2: voice (only if escalated)
   setTimeout(() => {
-    if (d.escalated) {
+    if (d.voiceRequired) {
+      $("conn").classList.add("on");
+      $("stVoice").classList.add("active");
+      $("stVoiceOut").textContent = "needed";
+      $("stVoiceNote").textContent = d.message || "Add a voice sample and verify again.";
+    } else if (d.escalated) {
       $("conn").classList.add("on");
       $("stVoice").classList.add("active");
       $("stVoiceOut").textContent = d.voiceScore == null ? "—" : "score " + d.voiceScore.toFixed(3);
@@ -553,7 +624,7 @@ function showResult(d) {
       $("stVoice").classList.add("skipped");
       $("stVoiceOut").textContent = "skipped";
       $("stVoiceNote").textContent = single != null
-        ? "The live backend verifies faces only (voice stage not connected yet)."
+        ? "The backend has no voice model loaded, so it decides by face only."
         : "Not needed - the face stage was confident.";
     }
   }, 700);
@@ -561,8 +632,9 @@ function showResult(d) {
   // Verdict + ring
   setTimeout(() => {
     const v = $("verdict");
-    v.className = "verdict " + (d.accepted ? "ok" : "bad");
-    v.textContent = d.accepted ? "✔ Identity verified" : "✖ Access denied";
+    v.className = "verdict " + (d.voiceRequired ? "warn" : d.accepted ? "ok" : "bad");
+    v.textContent = d.voiceRequired ? "🎙 Voice check needed" : d.accepted ? "✔ Identity verified" : "✖ Access denied";
+    if (d.voiceRequired && d.message) toast(d.message);
     const pct = Math.round(Math.max(0, Math.min(1, d.score)) * 100);
     arc.style.transition = "";
     requestAnimationFrame(() => (arc.style.strokeDashoffset = 540.35 * (1 - pct / 100)));
@@ -575,7 +647,7 @@ function showResult(d) {
 
     const chips = [
       ["Claimed", $("claimed").value],
-      ["Decided by", d.escalated ? "face + voice" : "face only"],
+      ["Decided by", d.voiceRequired ? "waiting for voice" : d.escalated ? "face + voice" : "face only"],
     ];
     if (d.faceScore != null) chips.push(["Face", d.faceScore.toFixed(3)]);
     if (d.voiceScore != null) chips.push(["Voice", d.voiceScore.toFixed(3)]);
@@ -595,7 +667,7 @@ function showResult(d) {
       c.textContent = "⚠ Demo";
       meta.append(c);
     }
-  }, d.escalated ? 1500 : 900);
+  }, d.escalated && !d.voiceRequired ? 1500 : 900);
 
   // Honest demo note
   const note = $("demoNote");
@@ -644,6 +716,7 @@ $("resetBtn").addEventListener("click", () => {
 const SYSTEMS = [
   { key: "Face SVM", label: "Face only", short: "Face only", color: "var(--s-face)" },
   { key: "Voice SVM", label: "Voice only", short: "Voice only", color: "var(--s-voice)" },
+  { key: "Early Feature Fusion SVM", label: "Early fusion (face + voice features)", short: "Early fusion", color: "var(--s-fusion)" },
   { key: "Hierarchical Face-Voice", label: "Hierarchical (face → voice)", short: "Hierarchical", color: "var(--s-hier)" },
 ];
 const METRICS = [
@@ -694,7 +767,8 @@ function renderPerformance() {
   const cols = ["Accuracy", "Precision", "Recall", "F1", "FAR", "FRR", "ROC-AUC"];
   let html = `<table><thead><tr><th>System</th>${cols.map((c) => `<th>${c}</th>`).join("")}<th>TP</th><th>FP</th><th>FN</th><th>TN</th></tr></thead><tbody>`;
   rows.forEach((s) => {
-    html += `<tr><td>${s.label}</td>${cols.map((c) => `<td>${s.d[c] == null ? "—" : fmtPct(s.d[c], 2)}</td>`).join("")}<td>${s.d.TP}</td><td>${s.d.FP}</td><td>${s.d.FN}</td><td>${s.d.TN}</td></tr>`;
+    // ROC-AUC is "N/A (binary decisions)" for the hierarchical system - it has no single score.
+    html += `<tr><td>${s.label}</td>${cols.map((c) => `<td>${typeof s.d[c] === "number" ? fmtPct(s.d[c], 2) : "—"}</td>`).join("")}<td>${s.d.TP}</td><td>${s.d.FP}</td><td>${s.d.FN}</td><td>${s.d.TN}</td></tr>`;
   });
   $("tableWrap").innerHTML = html + "</tbody></table>";
 
@@ -726,7 +800,7 @@ function renderPerformance() {
   const hier = rows.find((s) => s.key === "Hierarchical Face-Voice");
   $("sTrials").textContent = total.toLocaleString();
   if (hier) $("sAcc").textContent = fmtPct(hier.d.Accuracy);
-  $("sEsc").textContent = fmtPct(st.voice_escalation_rate ?? st.voice_escalations / total);
+  $("sEsc").textContent = fmtPct(st.voice_escalations / total);
 }
 
 $("tableToggle").addEventListener("click", () => {
@@ -811,6 +885,33 @@ $("enrollCam").addEventListener("click", async () => {
   btn.textContent = "📷 Take 5 photos";
 });
 
+// Optional enrollment voice sample: a fixed 4-second recording.
+$("enrollVoiceBtn").addEventListener("click", async () => {
+  const btn = $("enrollVoiceBtn");
+  let mic;
+  try {
+    mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch {
+    return toast("Couldn't use the microphone. Check that it's connected and allowed in the browser.");
+  }
+  const chunks = [];
+  const rec = new MediaRecorder(mic);
+  rec.ondataavailable = (e) => chunks.push(e.data);
+  const done = new Promise((r) => (rec.onstop = r));
+  btn.disabled = true;
+  rec.start();
+  for (let s = 4; s >= 1; s--) {
+    btn.textContent = `● Recording… say a sentence (${s})`;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  rec.stop();
+  await done;
+  mic.getTracks().forEach((t) => t.stop());
+  state.enrollVoice = new Blob(chunks, { type: rec.mimeType });
+  btn.disabled = false;
+  btn.textContent = "✓ Voice recorded - record again";
+});
+
 $("enrollBtn").addEventListener("click", async () => {
   const btn = $("enrollBtn");
   const name = $("enrollName").value.trim();
@@ -820,11 +921,15 @@ $("enrollBtn").addEventListener("click", async () => {
     const fd = new FormData();
     fd.append("name", name);
     state.enrollPhotos.forEach((f, i) => fd.append("faces", f, f.name || `enroll${i}.jpg`));
+    if (state.enrollVoice) fd.append("voices", await toWav32k(state.enrollVoice));
     const r = await fetch(API_BASE + "/api/enroll", { method: "POST", body: fd });
     const body = await r.json();
     if (!r.ok) throw new Error(body.detail || "HTTP " + r.status);
-    toast(`Enrolled ${body.id} with ${body.samples} photo(s)` + (body.skipped ? ` - ${body.skipped} had no visible face and were skipped.` : "."));
+    toast(`Enrolled ${body.id} with ${body.samples} photo(s)` + (body.voice_enrolled ? " and a voice sample" : "") +
+      (body.skipped ? ` - ${body.skipped} photo(s) had no visible face and were skipped.` : "."));
     state.enrollPhotos = [];
+    state.enrollVoice = null;
+    $("enrollVoiceBtn").textContent = "🎙 Record voice (optional, 4 s)";
     $("enrollName").value = "";
     await fillIdentities(body.id);
   } catch (err) {
