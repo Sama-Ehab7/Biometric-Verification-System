@@ -1,8 +1,20 @@
 # Backend: live face + voice verification
 
-`backend/server.py` is a small FastAPI server that verifies a claimed identity
-with the project's **trained models**. It reuses the project's own code, so a live
-photo or recording goes through exactly the same steps as the training data:
+A small FastAPI server that verifies a claimed identity with the project's
+**trained models**. It reuses the project's own code, so a live photo or
+recording goes through exactly the same steps as the training data.
+
+```
+backend/
+├── app.py         FastAPI app and routes (/api/verify, /api/enroll, ...)
+├── config.py      file paths and settings
+├── models.py      loads the trained SVMs, Session-1 enrollment references and the policy
+├── face.py        image -> face crop -> HOG + LBP sequence features
+├── voice.py       audio -> 32 kHz WAV -> MFCC + ZCR + RMS features
+├── policy.py      the hierarchical decision rules (tested in tests/test_backend_policy.py)
+├── enrollment.py  people enrolled through the API
+└── server.py      old entry point, kept for compatibility
+```
 
 | Step | Face | Voice |
 |---|---|---|
@@ -37,6 +49,12 @@ saved_models/hierarchical/hierarchical_policy_audit.joblib   optional: otherwise
 pip install fastapi uvicorn python-multipart numpy pandas scikit-learn scikit-image librosa soundfile joblib "opencv-python<5"
 ```
 
+Tests for the decision rules (no models needed):
+
+```
+python -m unittest tests.test_backend_policy
+```
+
 > OpenCV **5.x removed `cv2.CascadeClassifier`**, which the face detector needs. Use OpenCV 4.x.
 
 ## 3. Run
@@ -44,8 +62,10 @@ pip install fastapi uvicorn python-multipart numpy pandas scikit-learn scikit-im
 From the project root:
 
 ```
-python -m uvicorn backend.server:app --host 127.0.0.1 --port 8000
+python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
 ```
+
+(`backend.server:app` still works too.)
 
 In a second terminal, serve the UI:
 
