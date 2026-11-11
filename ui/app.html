@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Biometric Verification System</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#060913">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <!-- FIX: the original linked "style.css", which doesn't exist, so the page had no styling -->
@@ -136,6 +138,10 @@
         </div>
         <input type="file" id="enrollFiles" accept="image/*" multiple hidden>
         <video id="enrollVideo" class="enroll-video" autoplay playsinline muted hidden></video>
+        <div class="row">
+          <button class="ghost" id="enrollVoiceBtn" type="button">🎙 Record voice (optional, 4 s)</button>
+        </div>
+        <p class="hint" id="enrollVoiceHint">Optional: a voice sample lets the voice stage double-check this person when the face is unsure.</p>
         <button class="go small-go" id="enrollBtn" type="button" disabled><span class="go-label">Enroll</span></button>
       </div>
       <div class="card">
