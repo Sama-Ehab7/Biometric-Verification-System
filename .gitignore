@@ -37,3 +37,7 @@ Thumbs.db
 
 # Downloaded packages
 wheels/
+
+.venv/
+__pycache__/
+*.py[cod]
