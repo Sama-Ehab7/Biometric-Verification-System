@@ -1,480 +1,247 @@
-# Biometric Verification System
+﻿# Biometric Verification System
 
-## 1. Project Overview
+## Project overview
 
-This project implements a **Hierarchical Multimodal Biometric Verification System** that verifies a person's identity using two biometric modalities:
+This project compares traditional Machine Learning biometric verification using VidTIMIT face and voice recordings. It implements Face-only, Voice-only, Early Feature Fusion, and sequential Hierarchical Face-to-Voice verification. It uses handcrafted features with SVM and Random Forest models; Deep Learning is not used by the verification pipelines.
 
-- **Face Recognition:** Extracting facial features using Histogram of Oriented Gradients (HOG) and Local Binary Patterns (LBP).
-- **Voice Recognition:** Extracting acoustic features using Mel-Frequency Cepstral Coefficients (MFCC), Zero-Crossing Rate (ZCR), and Root Mean Square Energy (RMS).
+The technical audit, assignment checklist, and Fingerprint report are consolidated in this README below.
 
-The system explores unimodal and multimodal biometric verification approaches using traditional Machine Learning algorithms.
+## Data and evaluation protocol
 
-It implements four main verification approaches:
+The main experiments use VidTIMIT: 43 speakers, three sessions, 430 recordings. Session 1 (258 recordings) is used for training and enrollment; Session 2 (86) is used for validation and threshold selection; Session 3 (86) is held for final testing. Pairwise evaluation expands held-out recordings into **3,698 trials**: 86 genuine and 3,612 impostor. Genuine labels are 1; impostor labels are 0.
 
-1. Face-only Verification.
-2. Voice-only Verification.
-3. Early Feature Fusion.
-4. Hierarchical Face-Voice Verification.
+The enrollment/validation/test roles are kept separate. Thresholds are selected from Session 2 and frozen for Session 3. FAR is FP/(FP+TN); FRR is FN/(FN+TP). Because the trials are imbalanced, accuracy should be read with precision, recall, FAR, and FRR.
 
-The main objective is to compare individual biometric verification with multimodal verification and investigate whether combining facial and voice information improves identity verification performance.
+## Features and verification systems
 
-**Important:** This project uses traditional Machine Learning techniques and handcrafted feature extraction methods rather than Deep Learning models.
+- **Face:** 3,548 features per recording from HOG and LBP, computed from preprocessed 128×128 face images.
+- **Voice:** 30 features per recording: 13 MFCC coefficients with mean and standard deviation, plus mean and standard deviation for ZCR and RMS.
+- **Early Feature Fusion:** concatenates the 3,548 Face and 30 Voice features into 3,578 values before pairwise verification-model training. This is feature-level fusion.
+- **Hierarchical:** scores Face first. Face scores above the high threshold accept directly; scores below the low threshold reject directly; only uncertain trials are sent to Voice. Voice inference is sequential and is run only on escalated trials.
 
----
+Accuracy, precision, recall/genuine acceptance rate, F1, FAR, FRR, ROC-AUC, and confusion matrices are reported where applicable. The final Hierarchical system returns binary cascade decisions, so **ROC-AUC is not reported** for that system.
 
-## 2. Dataset
+## Session 3 results
 
-### VidTIMIT Dataset
+Thresholds for Face, Voice, and Early Fusion use the 1% target-FAR operating point; achieved test FAR can differ from target. Hierarchical lists its three cascade thresholds. EER is not reported in the VidTIMIT result artifacts.
 
-The project uses the publicly available **VidTIMIT dataset**, which contains video and audio recordings of multiple speakers.
+| System | Model | Accuracy | Precision | Recall | F1 | FAR | FRR | ROC-AUC | Threshold(s) | TN / FP / FN / TP |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| Face | SVM | 98.59% | 68.09% | 74.42% | 71.11% | 0.83% | 25.58% | 0.9657 | 0.290093 | 3582 / 30 / 22 / 64 |
+| Face | Random Forest | 98.57% | 75.38% | 56.98% | 64.90% | 0.44% | 43.02% | 0.9182 | 0.166667 | 3596 / 16 / 37 / 49 |
+| Voice | SVM | 97.21% | 29.27% | 13.95% | 18.90% | 0.80% | 86.05% | 0.8010 | 0.816066 | 3583 / 29 / 74 / 12 |
+| Voice | Random Forest | 96.92% | 22.00% | 12.79% | 16.18% | 1.08% | 87.21% | 0.8140 | 0.476667 | 3573 / 39 / 75 / 11 |
+| Early Fusion | SVM | 98.40% | 62.86% | 76.74% | 69.11% | 1.08% | 23.26% | 0.9684 | 0.217984 | 3573 / 39 / 20 / 66 |
+| Early Fusion | Random Forest | 98.62% | 73.97% | 62.79% | 67.92% | 0.53% | 37.21% | 0.9267 | 0.160000 | 3593 / 19 / 32 / 54 |
+| Hierarchical | Face SVM → Voice SVM | 98.57% | 66.67% | 76.74% | 71.35% | 0.91% | 23.26% | Not reported | 0.171650 / 0.290093 / 0.202839 | 3579 / 33 / 20 / 66 |
 
-Dataset characteristics:
+Hierarchical Session 2 FAR was 0.8029%. On Session 3 it made 3,668 direct Face decisions and escalated 30 trials to Voice. The sequential result matches the validated audit result; see the audit report for stage counts and comparison details.
 
-- 43 speakers.
-- 19 female and 24 male participants.
-- 3 recording sessions.
-- 10 speech recordings per speaker.
-- 430 audio recordings in total.
-- 103,542 extracted video frames.
+## Fingerprint bonus
 
-### Dataset Split
+Fingerprint is a separate optional modality using FVC2002 Set B. DB1_B–DB3_B are the captured data used for the reported real-data evaluation; DB4_B is synthetic and kept separate. Identity names include the database prefix. The pipeline uses grayscale, CLAHE, median filtering, aspect-preserving resize/padding to 256×256, then HOG (8,100 values) and LBP (10 values), for **8,110 features** total.
 
-To prevent recording leakage and evaluate the system across different recording sessions, the dataset is divided as follows:
+The saved SVM and Random Forest results have high FRR at the validation-selected low-FAR operating point. A separate controlled comparison did not improve test FAR, so the original models remain authoritative. Fingerprint is not fused with VidTIMIT because the datasets do not share real identities.
 
-| Session | Recordings per Speaker | Purpose |
-|---|---:|---|
-| Session 1 | 6 | Training and Enrollment |
-| Session 2 | 2 | Validation and Threshold Selection |
-| Session 3 | 2 | Final Testing |
+Reusable, non-training inference for a claimed enrolled fingerprint is described in the Fingerprint audit section below. With the saved model and enrollment template available, run from the repository root:
 
-The same speaker identities are represented in all three sessions.
+```powershell
+.venv\Scripts\python.exe src/verification/fingerprint_inference.py data/raw/fingerprint/DB1_B/101_7.tif DB1_B_101
+```
 
-The system uses Session 1 to establish enrolled identities, Session 2 to select operating thresholds, and Session 3 for independent final evaluation.
+This command reads the supplied image and saved artifacts and returns a score, frozen threshold, and ACCEPT/REJECT result. Do not pass `--create-enrollment-artifact` when using an existing submission workspace; that option writes a new template artifact.
 
-### Dataset Citation
+## Optional feature status
 
-C. Sanderson and B. C. Lovell, "Multi-Region Probabilistic Histograms for Robust and Scalable Identity Inference," in *Lecture Notes in Computer Science*, vol. 5558, pp. 199–208, 2009.
-
----
-
-## 3. System Architecture
-
-The system consists of five major stages:
-
-1. Data Preprocessing.
-2. Feature Extraction.
-3. Unimodal Verification.
-4. Multimodal Fusion.
-5. Evaluation and Comparison.
-
-### Verification Approaches
-
-#### A. Face-only Verification
-
-Facial features are extracted from video frames and used to train traditional Machine Learning classifiers.
-
-Feature extraction methods:
-
-- HOG (Histogram of Oriented Gradients).
-- LBP (Local Binary Patterns).
-
-Models evaluated:
-
-- Support Vector Machine (SVM).
-- Random Forest (RF).
-
-#### B. Voice-only Verification
-
-Acoustic features are extracted from WAV recordings.
-
-Feature extraction methods:
-
-- MFCC (Mel-Frequency Cepstral Coefficients).
-- ZCR (Zero-Crossing Rate).
-- RMS (Root Mean Square Energy).
-
-Models evaluated:
-
-- Support Vector Machine (SVM).
-- Random Forest (RF).
-
-#### C. Early Feature Fusion
-
-Early Fusion combines the extracted Face and Voice feature vectors into a single multimodal representation before classification.
-
-The combined feature vector contains:
-
-- 3,548 Face features.
-- 30 Voice features.
-- 3,578 total multimodal features.
-
-The fused representation is used to train a traditional Machine Learning verification classifier.
-
-#### D. Hierarchical Face-Voice Verification
-
-The Hierarchical approach uses a sequential two-stage verification pipeline.
-
-**Stage 1 — Face Verification**
-
-The Face SVM evaluates the claimed identity.
-
-Based on its verification score:
-
-- High-confidence scores are accepted directly.
-- Low-confidence scores are rejected directly.
-- Uncertain scores are escalated to Voice verification.
-
-**Stage 2 — Voice Verification**
-
-Only uncertain Face trials are passed to the Voice SVM.
-
-The Voice model evaluates the claim and produces the final accept/reject decision.
-
-This approach avoids unnecessary Voice inference when the Face result is already sufficiently confident.
-
----
-
-## 4. Feature Extraction
-
-### Face Features
-
-Face preprocessing includes:
-
-- Face detection using Haar Cascade classifiers.
-- Selection of the largest detected face.
-- Face-region padding.
-- Grayscale conversion.
-- Image resizing to 128 × 128 pixels.
-
-Feature extraction uses:
-
-| Method | Description |
+| Component | Status |
 |---|---|
-| HOG | Extracts local gradient and edge-orientation information. |
-| LBP | Describes local texture patterns using neighborhood intensity comparisons. |
+| Face-only, Voice-only, Early Fusion, Hierarchical | Implemented and evaluated |
+| Fingerprint bonus | Implemented as a separate modality; high FRR limitation documented |
+| Speech-command bonus | Not implemented |
+| Real-time verification bonus | Not implemented |
+| Custom Team Dataset | **NOT STARTED / PENDING collection** |
 
-The final Face representation contains 3,548 features per recording.
+The Custom Team Dataset must be collected and evaluated separately; it is not part of the current results. The FVC identities are not linked to VidTIMIT speakers, so the project does not claim genuine three-modality fusion.
 
-### Voice Features
+## Project layout
 
-Audio preprocessing and feature extraction use:
-
-| Feature | Description |
-|---|---|
-| MFCC | Represents the spectral characteristics of speech. |
-| ZCR | Measures the rate of signal sign changes. |
-| RMS | Represents the signal's energy level. |
-
-The final Voice representation contains 30 features per recording.
-
----
-
-## 5. Machine Learning Models
-
-The project uses traditional Machine Learning algorithms.
-
-| Modality | Models |
-|---|---|
-| Face | Support Vector Machine (SVM), Random Forest |
-| Voice | Support Vector Machine (SVM), Random Forest |
-| Early Fusion | SVM, Random Forest |
-| Hierarchical | Face SVM + Voice SVM |
-
-The SVM pipelines use feature scaling and dimensionality reduction where configured.
-
-The Random Forest models use multiple decision trees and class balancing.
-
----
-
-## 6. Verification Methodology
-
-The project implements biometric verification rather than relying only on multiclass identity classification.
-
-Each verification trial compares a probe recording against an enrolled identity.
-
-The pairwise feature representation is based on the absolute difference between the probe feature vector and the enrolled identity's reference representation.
-
-The system produces a binary decision:
-
-- **Genuine:** The probe is accepted as belonging to the claimed identity.
-- **Impostor:** The probe is rejected as not belonging to the claimed identity.
-
-### Experimental Protocol
-
-| Dataset Session | Role |
-|---|---|
-| Session 1 | Training and Enrollment |
-| Session 2 | Validation and Threshold Selection |
-| Session 3 | Final Evaluation |
-
-Thresholds are selected using validation data, while the final reported performance is measured on the independent test session.
-
----
-
-## 7. Evaluation Metrics
-
-The system is evaluated using the following metrics:
-
-| Metric | Description |
-|---|---|
-| Accuracy | Overall proportion of correct decisions. |
-| Precision | Proportion of accepted genuine claims among all accepted claims. |
-| Recall | Proportion of genuine claims correctly accepted. |
-| F1-Score | Harmonic mean of Precision and Recall. |
-| FAR | False Acceptance Rate: proportion of impostor claims incorrectly accepted. |
-| FRR | False Rejection Rate: proportion of genuine claims incorrectly rejected. |
-| ROC-AUC | Area under the Receiver Operating Characteristic curve, where continuous scores are available. |
-
-Confusion matrices, ROC curves, and FAR-FRR curves are generated where applicable.
-
-For the final Hierarchical cascade, the system produces binary decisions. Therefore, ROC-AUC is not reported for that cascade unless a valid continuous combined score is defined.
-
----
-
-## 8. Experimental Results
-
-The following table reports the current Session 3 evaluation results.
-
-| System | Accuracy | Precision | Recall | F1-Score | FAR | FRR |
-|---|---:|---:|---:|---:|---:|---:|
-| Face SVM | 98.59% | 68.09% | 74.42% | 71.11% | 0.83% | 25.58% |
-| Voice SVM | 97.21% | 29.27% | 13.95% | 18.90% | 0.80% | 86.05% |
-| Early Feature Fusion SVM | 98.40% | 62.86% | 76.74% | 69.11% | 1.08% | 23.26% |
-| Hierarchical Face-Voice | 98.57% | 66.67% | 76.74% | 71.35% | 0.91% | 23.26% |
-
-### Results Discussion
-
-- Face SVM provides strong overall verification performance.
-- Voice-only verification shows weaker genuine-user detection under the selected security threshold.
-- Early Feature Fusion improves genuine-user recall compared with Face-only verification.
-- Hierarchical verification achieves a higher F1-score than the Face-only and Early Fusion SVM baselines in the current experiment.
-- The Hierarchical approach also achieves a lower FAR than Early Feature Fusion.
-- The results demonstrate that multimodal integration can improve selected performance measures, although improvements are not universal across all metrics.
-
-### Hierarchical Inference Statistics
-
-The final Session 3 experiment contains 3,698 verification trials.
-
-- Total trials: 3,698.
-- Direct Face decisions: 3,668.
-- Voice escalations: 30.
-
-Voice inference is performed only for trials escalated by the Face stage.
-
-### Important Limitation
-
-The Session 2 validation set contains only a small number of genuine trials escalated to Voice verification. Therefore, the observed contribution of Voice within the Hierarchical pipeline should be interpreted cautiously.
-
----
-
-## 9. Project Structure
+This is a conceptual guide to the main populated areas; it does not assert that every possible project folder exists.
 
 ```text
 Biometric-Verification-System/
-│
-├── data/
-│   ├── raw/
-│   │   ├── archives/
-│   │   └── vidtimit/
-│   │
-│   ├── processed/
-│   │   ├── face/
-│   │   ├── voice/
-│   │   ├── splits/
-│   │   └── ...
-│   │
-│   └── metadata/
-│
+├── data/                 # Raw and processed datasets (not all may be distributed)
+├── notebooks/            # Exploratory notebooks
+├── results/              # Saved evaluation results and plots
+├── saved_models/         # Saved estimators and policies
 ├── src/
-│   ├── preprocessing/
-│   ├── features/
-│   ├── models/
-│   ├── verification/
-│   ├── fusion/
 │   ├── evaluation/
-│   └── ...
-│
-├── saved_models/
-│   ├── face/
-│   ├── voice/
-│   ├── fusion/
-│   └── hierarchical/
-│
-├── results/
-│   ├── face/
-│   ├── voice/
-│   ├── fusion/
-│   └── hierarchical/
-│
-├── notebooks/
-├── requirements.txt
-└── README.md
+│   ├── features/
+│   ├── preprocessing/
+│   └── verification/
+├── tests/                # Focused inference/model smoke tests
+└── requirements.txt      # Core dependencies plus notebook/inspection tools
 ```
 
----
+Speech-command and real-time directories do not contain implementations. No UI/backend application is provided.
 
-## 10. Installation and Setup
+## Environment and dependencies
 
-### Prerequisites
-
-- Python 3.12.
-- pip.
-- Git.
-
-### Clone the Repository
-
-```bash
-git clone <YOUR_REPOSITORY_URL>
-cd Biometric-Verification-System
-```
-
-### Create a Virtual Environment
-
-Windows:
+Use Python 3.12 and a project virtual environment. The requirements files declare packages; they are not a tested environment lockfile, and installing them was not part of the audit. Saved scikit-learn models can be sensitive to library-version changes, so use the project’s intended environment when loading them.
 
 ```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
-### Install Dependencies
+Before running scripts that import Pandas, check that Pandas loads in the target environment:
 
-```bash
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+```powershell
+python -c "import pandas as pd; print(pd.__version__)"
 ```
 
-Ensure that the VidTIMIT dataset is downloaded and extracted into the expected data directories before running preprocessing or feature extraction scripts.
+A Windows Application Control error has blocked the Pandas native `pandas_parser` extension in one observed environment. If that occurs, Pandas metadata may still appear installed while imports fail. This audit did not establish a package-upgrade fix; do not treat upgrading Pandas or pip as a remedy.
 
----
+`requirements.txt` contains the core dependencies (NumPy, Pandas, OpenCV, scikit-image, librosa, scikit-learn, SciPy, SoundFile, Matplotlib, and joblib) plus notebook and auxiliary inspection/visualization tools (Jupyter, ipykernel, Pillow, and Seaborn). It does not include Deep Learning or UI/backend packages.
 
-## 11. Running the Project
+## Reproduction commands — may overwrite existing outputs
 
-Run the scripts from the repository root directory.
+> **Warning:** These are reproduction/training commands, not read-only checks. Preprocessing, feature extraction, split creation, model training, threshold selection, and evaluation scripts write to existing project paths. Running them can replace processed data, splits, saved models, threshold records, CSV results, or plots. Do not run them in a workspace where validated artifacts must be preserved unless you have made and verified separate backups.
 
-### Step 1 — Dataset Preprocessing
+Run from the repository root, using the intended Python environment. The following commands are retained for reproducing the pipeline when overwriting outputs is acceptable:
 
-```bash
+```powershell
 python src/preprocessing/face_preprocessing.py
-```
-
-### Step 2 — Feature Extraction
-
-```bash
 python src/features/face_features.py
 python src/features/voice_features.py
-```
-
-### Step 3 — Session Mapping and Dataset Preparation
-
-```bash
 python src/preprocessing/session_split.py
 python src/preprocessing/prepare_datasets.py
-```
-
-### Step 4 — Unimodal Verification
-
-```bash
 python src/verification/face_verification.py
 python src/verification/voice_verification.py
-```
-
-### Step 5 — Security Threshold Evaluation
-
-```bash
 python src/verification/face_security_thresholds.py
 python src/verification/voice_security_thresholds.py
-```
-
-### Step 6 — Early Feature Fusion
-
-```bash
 python src/verification/early_fusion_verification.py
-```
-
-### Step 7 — Hierarchical Verification
-
-```bash
 python src/verification/hierarchical_verification.py
 ```
 
-The Hierarchical implementation uses the validated audit policy and produces sequential evaluation outputs.
+The Face/Voice/Fusion scripts train or select thresholds and write model/results artifacts. The Hierarchical script writes its `_sequential` files and sequential policy; it preserves the legacy and `_audit` files but overwrites the sequential names on rerun. `src/verification/fingerprint_verification.py` also trains and overwrites the baseline Fingerprint model/result paths; it is intentionally omitted from this reproduction command list because the Fingerprint outputs are already finalized.
 
-**Note:** The exact execution order and required input artifacts should be followed. If the dataset, processed features, or saved models already exist, the corresponding earlier stages do not need to be repeated.
+## Comprehensive audit record
 
----
+**Overall status: READY WITH LIMITATIONS.** The mandatory Face-only, Voice-only, Early Fusion, and Hierarchical systems are implemented with handcrafted features and traditional ML models. Session 3 metrics are arithmetically consistent over 3,698 trials. The Fingerprint bonus works as a separate modality but has high FRR at the selected low-FAR operating point. The Custom Team Dataset is pending; speech-command and real-time bonuses are not implemented.
 
-## 12. Technologies Used
+### Dataset and protocol audit
 
-- Python 3.12
-- NumPy
-- Pandas
-- OpenCV
-- scikit-image
-- Librosa
-- SoundFile
-- SciPy
-- scikit-learn
-- Matplotlib
-- Seaborn
-- Joblib
+- VidTIMIT contains 43 speakers and 430 recordings. Session 1 has 258 recordings for training/enrollment; Session 2 has 86 for validation/threshold selection; Session 3 has 86 for final evaluation.
+- Session 3 verification expands to 86 genuine and 3,612 impostor trials (3,698 total). Genuine is label 1; impostor is label 0. FAR = FP/(FP+TN), FRR = FN/(FN+TP).
+- The split construction is in `src/preprocessing/session_split.py` and `src/preprocessing/prepare_datasets.py`. The observed split files use the stated session protocol.
+- Face and Voice use the same VidTIMIT identities, held-out sessions, claimed identity trial protocol, and 3,698 Session 3 trials. Their chosen thresholds and operating points are model-specific. Early Fusion uses the same trials with concatenated features. Hierarchical uses the same trials with a cascade policy.
+- Trial imbalance means accuracy alone is insufficient; FAR estimates are also sensitive to a small number of false accepts.
 
----
+### Authoritative Session 3 comparison
 
-## Fingerprint Bonus (Separate Modality)
+Values below are from the saved Face, Voice, Fusion, and sequential Hierarchical evaluation files. The Face final CSV omits accuracy, precision, recall, and F1; those four values are derived from its stored confusion counts. EER is unavailable in the VidTIMIT result artifacts. Hierarchical produces binary cascade decisions, so ROC-AUC is not reported.
 
-Fingerprint verification is implemented in `src/preprocessing/fingerprint_preprocessing.py`, `src/features/fingerprint_features.py`, and `src/verification/fingerprint_verification.py`. It is not fused with VidTIMIT because the FVC identities are not the VidTIMIT participants. There are 320 images (four databases, 10 identities and 8 impressions each); DB1_B–DB3_B are captured data and DB4_B is synthetic. Only DB1_B–DB3_B are included in the real-data results (30 database-qualified identities). Processing uses grayscale, CLAHE, median filtering, and aspect-preserving resize/padding to 256×256. Descriptors are 8,100 HOG plus 10 uniform-LBP histogram values. Impressions 1–4 enroll, 5–6 validate, and 7–8 test, with 120/60/60 real images and 3,600/1,800/1,800 pair trials.
+| System | Model | Threshold | Accuracy | Precision | Recall | F1 | FAR | FRR | ROC-AUC | TN / FP / FN / TP |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| Face | SVM | 0.290093 | 98.59% | 68.09% | 74.42% | 71.11% | 0.83% | 25.58% | 0.9657 | 3582 / 30 / 22 / 64 |
+| Face | Random Forest | 0.166667 | 98.57% | 75.38% | 56.98% | 64.90% | 0.44% | 43.02% | 0.9182 | 3596 / 16 / 37 / 49 |
+| Voice | SVM | 0.816066 | 97.21% | 29.27% | 13.95% | 18.90% | 0.80% | 86.05% | 0.8010 | 3583 / 29 / 74 / 12 |
+| Voice | Random Forest | 0.476667 | 96.92% | 22.00% | 12.79% | 16.18% | 1.08% | 87.21% | 0.8140 | 3573 / 39 / 75 / 11 |
+| Early Fusion | SVM | 0.217984 | 98.40% | 62.86% | 76.74% | 69.11% | 1.08% | 23.26% | 0.9684 | 3573 / 39 / 20 / 66 |
+| Early Fusion | Random Forest | 0.160000 | 98.62% | 73.97% | 62.79% | 67.92% | 0.53% | 37.21% | 0.9267 | 3593 / 19 / 32 / 54 |
+| Hierarchical | Face SVM → Voice SVM | 0.171650 / 0.290093 / 0.202839 | 98.57% | 66.67% | 76.74% | 71.35% | 0.91% | 23.26% | Not reported | 3579 / 33 / 20 / 66 |
 
-Saved baseline results in `results/fingerprint/` (thresholds selected at validation target FAR 1%):
+All listed confusion rows sum to 3,698. Face/Voice/Fusion thresholds are the saved 1% target-FAR operating points; test FAR may differ from target. The Hierarchical threshold record is `results/hierarchical/selected_thresholds_audit.json`: Session 2 FAR 0.8029%, Face low 0.17164957, Face high 0.290093, Voice 0.20283867.
 
-| Model | Threshold | Validation FAR | Validation FRR | Test accuracy | Precision | Recall | F1 | FAR | FRR | ROC-AUC | TN/FP/FN/TP |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| SVM | 0.454061 | 0.977% | 86.67% | 96.39% | 44.44% | 33.33% | 38.10% | 1.44% | 66.67% | 0.9051 | 1715/25/40/20 |
-| Random Forest | 0.236667 | 0.920% | 86.67% | 95.50% | 32.20% | 31.67% | 31.93% | 2.30% | 68.33% | 0.9249 | 1700/40/41/19 |
+### Hierarchical policy and artifact authority
 
-The high FRR is a material limitation. The isolated comparison in `results/fingerprint/controlled_audit_v1/` evaluated the unchanged saved baselines and two block-balanced HOG/LBP alternatives. Alternative thresholds were selected using validation only. The alternatives reached validation FAR 0.977% and FRR 85.0–86.67%, but test FAR was 4.02–4.14%, so they were not adopted. In the saved baseline audit, false accepts were among same-database impostor claims while cross-database false accepts were zero; this suggests that the aggregate result benefits from easier cross-database negatives. Only 30 real identities and two validation/test impressions per identity are available.
+`src/verification/hierarchical_verification.py` loads `saved_models/hierarchical/hierarchical_policy_audit.joblib`, uses Face SVM first, and runs Voice only for uncertain trials. Session 3 stage counts are 3,574 direct Face rejects, 94 direct Face accepts, and 30 Voice escalations. Each trial receives one final binary decision; runtime decisions are generated before evaluation labels are attached.
 
-## Metrics
+The authoritative evaluation outputs use the `_sequential` suffix, including `results/hierarchical/hierarchical_trial_decisions_sequential.csv` and `results/hierarchical/hierarchical_comparison_sequential.csv`. `results/hierarchical/sequential_vs_audit_comparison.json` records identical Session 3 decisions and labels versus the validated audit, zero differences in reported metrics, and maximum escalated Voice score delta 2.06e-8. The `_audit` threshold record and policy are authoritative inputs. Canonical legacy hierarchy outputs are historical and are retained; do not mix them with the sequential results.
 
-Accuracy is correct decisions divided by all decisions. Precision is TP/(TP+FP), recall/genuine acceptance rate is TP/(TP+FN), and F1 is their harmonic mean. FAR is FP/(FP+TN), the impostor acceptance proportion; FRR is FN/(FN+TP), the genuine rejection proportion. ROC-AUC measures ranking over score thresholds. EER is the point where FAR and FRR are closest; it is descriptive and must not be selected on the final test set. Confusion matrices report TN, FP, FN, TP. Since trial counts are imbalanced, accuracy alone is insufficient.
+The validated Face/Voice security models are the `*_security.joblib` files under `saved_models/face/` and `saved_models/voice/`; Early Fusion models are in `saved_models/fusion/`. These are distinct from older baseline, session-based, or tuned model artifacts. No model was retrained for this audit.
 
-## Optional Bonus Status and Limitations
+### Assignment requirements checklist
 
-| Component | Status | Notes |
+| Requirement | Status | Evidence and limitation |
 |---|---|---|
-| Face-only | Complete | VidTIMIT, SVM and Random Forest |
-| Voice-only | Complete | VidTIMIT, SVM and Random Forest |
-| Face+Voice Early Fusion | Complete | Concatenated feature vectors before classifier training |
-| Hierarchical Face→Voice | Complete | Sequential cascade; Voice runs for escalated trials only |
-| Fingerprint | Complete with limitations | Separate FVC single-modality experiment; high FRR |
-| Speech commands | Not implemented | No protected-command recognition pipeline exists |
-| Real-time verification | Not implemented | No live/streaming pipeline exists |
-| Custom team dataset | **NOT STARTED / PENDING** | Collect consented, labeled team face and voice data. Keep it in a separate dataset and define enrollment, validation, and test recordings without reuse across partitions. Do not merge it into VidTIMIT results. |
+| Face preprocessing | PASS | `src/preprocessing/face_preprocessing.py`; processed Face data and metadata inspected. |
+| Face HOG | PASS | `src/features/face_features.py`; HOG contributes to 3,548 dimensions. |
+| Face LBP | PASS | Same feature source; LBP accompanies HOG. |
+| Voice MFCC | PASS | `src/features/voice_features.py`; 13 coefficients, mean and standard deviation. |
+| Voice ZCR | PASS | Same source; mean and standard deviation. |
+| Voice RMS | PASS | Same source; mean and standard deviation. |
+| Early Feature Fusion | PASS | `src/verification/early_fusion_verification.py`; concatenates Face+Voice features before training. |
+| Face SVM | PASS | Security model and Session 3 metrics in `results/face/`. |
+| Face Random Forest | PASS | Security model and Session 3 metrics in `results/face/`. |
+| Voice SVM | PASS | Security model and Session 3 metrics in `results/voice/`. |
+| Voice Random Forest | PASS | Security model and Session 3 metrics in `results/voice/`. |
+| Fusion SVM | PASS | Security model and Session 3 metrics in `results/fusion/`. |
+| Fusion Random Forest | PASS | Security model and Session 3 metrics in `results/fusion/`. |
+| Face-only verification | PASS | Pairwise genuine/impostor trials; 3,698 Session 3 decisions. |
+| Voice-only verification | PASS | Same held-out trial protocol; Voice genuine recall is low at the security threshold. |
+| Early Fusion verification | PASS | Same trial protocol; feature-level concatenation. |
+| Hierarchical verification | PASS | Sequential Face-to-Voice policy and saved sequential result files. |
+| Sequential Face → Voice decisions | PASS | 30 of 3,698 Session 3 trials escalated; no Voice scores on direct decisions. |
+| Validation-only threshold selection | PASS | Session 2 policy record; Session 3 used only for final evaluation. |
+| Session 3 evaluation | PASS | Confusion matrices sum to 3,698 for all four compared systems. |
+| Metrics calculations | PASS | Confusion counts align with accuracy, precision, recall, F1, FAR, and FRR. |
+| Confusion matrices | PASS | Saved result artifacts; Hierarchical TN/FP/FN/TP = 3579/33/20/66. |
+| ROC curves | PASS | Face, Voice, Fusion, and Fingerprint continuous-score outputs have ROC plots. Hierarchical ROC-AUC is not applicable to its binary cascade output. |
+| Comparison across required systems | PASS | Same VidTIMIT trial protocol; thresholds/operating points are model-specific. |
+| Fingerprint dataset | PASS | 320 images; 40 database-qualified identities; DB4_B synthetic and separate. |
+| Fingerprint preprocessing | PASS | CLAHE, median filter, aspect-preserving resize/padding to 256×256; 320 processed successfully. |
+| Fingerprint HOG/LBP | PASS | HOG 8,100 + LBP 10; feature ordering and inference parity checked. |
+| Fingerprint SVM/RF | PASS | Saved estimators, thresholds, target FAR, and feature ordering. |
+| Fingerprint evaluation | PASS | Validation threshold frozen before test; high FRR is documented. |
+| Fingerprint new-image inference | PASS | `src/verification/fingerprint_inference.py`; smoke-tested on a raw dataset image. A separately collected external sample was unavailable. |
+| No Deep Learning in verification | PASS | Mandatory pipelines use handcrafted features and SVM/RF. Neural packages are not required dependencies. |
+| Speech-command bonus | NOT STARTED | No speech-command implementation. |
+| Real-time bonus | NOT STARTED | No live/streaming verification implementation. |
+| Custom Team Dataset | NOT STARTED | Collection is pending and excluded from the VidTIMIT experiment. |
 
-DB1_B–DB3_B fingerprint identities are not linked to VidTIMIT speakers, so a three-modality experiment cannot claim genuine same-person evidence. The common Face/Voice comparison uses VidTIMIT identities and session protocol. Session 2 has only 86 recordings (86 genuine and 3,612 impostor pair trials), limiting threshold precision; fingerprint has only 30 real identities. The dataset citation is C. Sanderson and B. C. Lovell, “Multi-Region Probabilistic Histograms for Robust and Scalable Identity Inference,” LNCS 5558, 199–208 (2009). Confirm redistribution terms before sharing raw data.
+Focused validation executed five tests successfully with `.venv/Scripts/python.exe -m unittest discover -s tests -v`. These checked saved-model input dimensions and score inference, Fingerprint feature parity to 1e-6, raw-image inference, invalid path/claim handling, and refusal to overwrite an existing template artifact. No full existing test suite was present. No overwrite-prone training or evaluation script was rerun.
 
-The current source tree has no implementation files for speech commands or real-time verification; `main.py` is empty and `app/` has no application implementation. The directory illustration above should be read as conceptual, not as a claim that every listed subfolder exists.
+## Fingerprint technical report
 
-## Viva Preparation
+### Dataset, splits, and features
 
-- **HOG and LBP?** HOG summarizes local gradient orientations; LBP encodes local texture through neighbor intensity comparisons.
-- **MFCC, ZCR, RMS?** MFCC describes spectral envelope, ZCR measures sign changes, and RMS measures frame energy; mean and standard deviation summarize each recording.
-- **Verification versus identification?** Verification tests a claimed identity with a binary genuine/impostor decision; identification searches among identities.
-- **Early fusion?** Face and Voice vectors are concatenated before verification-model training; dimensions and scaling can affect each modality’s contribution.
-- **Hierarchy?** Face score decides directly above/below two cutoffs; only uncertain trials are escalated to Voice.
-- **FAR and FRR?** FAR is impostor acceptance (security risk); FRR is genuine rejection (usability cost). Thresholds trade them off.
-- **Leakage prevention?** Session 1 fits/enrolls, Session 2 selects thresholds, and frozen decisions are evaluated on Session 3.
-- **Why traditional ML?** Deep Learning is disallowed; the verification pipelines use handcrafted descriptors with SVM/Random Forest models.
-- **Fingerprint limitations?** Few identities/impressions, high FRR under low-FAR operation, and easier cross-database impostor trials.
+FVC2002 Set B contains DB1_B, DB2_B, DB3_B, and DB4_B, each with 10 identities and eight impressions: 320 images total. DB1_B–DB3_B are captured data (30 database-qualified identities) and DB4_B is synthetic (10 identities); they are not merged. The preprocessing report is `data/metadata/fingerprint_preprocessing_report.csv`; feature records are `data/processed/fingerprint/fingerprint_features.csv`.
 
-## Conclusion
+The split builder `src/preprocessing/prepare_fingerprint_dataset.py` assigns impressions 1–4 to enrollment, 5–6 to validation, and 7–8 to test. Real split counts are 120/60/60 images; synthetic split counts are 40/20/20. All identities occur in all splits, and image-level overlap checks passed. All source images were readable, all processed images were 256×256, and the 320×8,110 feature matrix had no duplicates, missing values, or non-finite entries.
 
-This project demonstrates a traditional Machine Learning-based multimodal biometric verification system using Face and Voice information.
+Preprocessing converts to grayscale, applies CLAHE (clip limit 2.0, tile grid 8×8), median filtering (size 3), then aspect-preserving resize and white padding to 256×256. HOG uses 9 orientations, 16×16 pixels per cell, 2×2 cells per block, L2-Hys normalization, and square-root transform, giving 8,100 values. Uniform LBP uses P=8, R=1 and a normalized 10-bin histogram. Feature order is HOG indices 0000–8099 followed by LBP indices 00–09.
 
-It compares unimodal verification with Early Feature Fusion and Hierarchical Face-Voice verification under a session-based evaluation protocol.
+### Fingerprint trials and baseline metrics
 
-The experiments highlight the advantages and limitations of individual biometric modalities and multimodal integration.
+Four enrollment images form each identity template. Training genuine trials use a leave-one-out template made from the other three samples; impostor trials compare against other identity templates. This yields 3,600 training trials (120 genuine, 3,480 impostor). Validation and test probes are each scored against the full four-image enrollment templates, yielding 1,800 trials each (60 genuine, 1,740 impostor). Thresholds are selected from validation at target FAR 1%, then frozen for test.
 
-The Hierarchical approach demonstrates how a sequential verification pipeline can use Face as the primary modality and invoke Voice only when additional verification is needed.
+| Model | Threshold | Validation FAR | Validation FRR | Test accuracy | Precision | Recall | F1 | FAR | FRR | ROC-AUC | TN / FP / FN / TP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| SVM | 0.4540606025 | 0.9770% | 86.6667% | 96.3889% | 44.4444% | 33.3333% | 38.0952% | 1.4368% | 66.6667% | 0.905125 | 1715 / 25 / 40 / 20 |
+| Random Forest | 0.2366666667 | 0.9195% | 86.6667% | 95.5000% | 32.2034% | 31.6667% | 31.9328% | 2.2989% | 68.3333% | 0.924866 | 1700 / 40 / 41 / 19 |
 
-The results provide an experimental comparison of security and usability trade-offs in multimodal biometric verification.
+The discrete test-score EER summaries are 0.1664 (SVM) and 0.1575 (Random Forest); they are descriptive only and were not used for threshold selection. Confusion matrices and ROC plots are under `results/fingerprint/SVM/` and `results/fingerprint/RandomForest/`.
+
+The separate controlled comparison at `results/fingerprint/controlled_audit_v1/` tested block-balanced HOG/LBP distances with linear SVM and Logistic Regression. Validation FAR was 0.9770%; validation FRR was 86.6667% and 85.0000%, respectively. Test FAR increased to 4.0230% and 4.1379%, so neither alternative replaced the saved baseline. The baseline audit found false accepts among same-database impostor claims and none among cross-database impostors, suggesting the cross-database negative trials are easier. Small identity/impression counts and high FRR limit conclusions.
+
+### Fingerprint inference usage
+
+The original model artifacts contain estimator, threshold, feature names/order, and target FAR, but not templates. `saved_models/fingerprint/fingerprint_enrollment_templates_v1.npz` contains 30 mean templates derived from the real enrollment split. Inference in `src/verification/fingerprint_inference.py` loads the saved SVM and template artifact, applies the same image preprocessing and HOG/LBP parameters, scores the absolute feature difference, and returns claim, probability score, frozen threshold, and ACCEPT/REJECT. It does not train or calibrate. The module refuses to overwrite an existing template artifact. A duplicate `.joblib` export is retained but is not used.
+
+```powershell
+.venv\Scripts\python.exe src/verification/fingerprint_inference.py data/raw/fingerprint/DB1_B/101_7.tif DB1_B_101
+```
+
+The smoke-test image scored 0.00186968 against threshold 0.45406060 and was rejected, matching its saved test trial. This validates the code path on an existing dataset image, not generalization to a new user or sensor. Fingerprint identities are unrelated to VidTIMIT participants, so genuine three-modality fusion cannot be claimed.
+
+### Fingerprint limitations
+
+There are 30 real identities, four enrollment impressions, and only two impressions for each of validation and test. HOG is spatially sensitive; rotation, pressure, placement, ridge quality, and sensor shift may affect it, but these factors were not individually isolated. The alternatives increased genuine acceptance slightly while substantially worsening test FAR. Keep the original results and threshold; do not tune on test data. DB4_B is synthetic and is never represented as captured data.
+
+## Environment notes and references
+
+`requirements.txt` lists core dependencies plus notebook and auxiliary tools. It is not a tested lockfile, and no clean installation was tested. The active Windows environment once reported an Application Control denial while loading Pandas' native `pandas_parser` extension. Package metadata can exist even when this DLL import fails; upgrading Pandas or pip is not an established fix. Check Pandas importability in the target environment before running dependent scripts.
+
+VidTIMIT reference: C. Sanderson and B. C. Lovell, “Multi-Region Probabilistic Histograms for Robust and Scalable Identity Inference,” LNCS 5558, 199–208 (2009).
